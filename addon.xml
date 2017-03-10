@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.program.advanced.DOOM.launcher"
+       name="Advanced DOOM Launcher" version="0.9.0~alpha" provider-name="Wintermute0110">
+  <requires>
+    <!-- 2.25.0 Krypton 17.x -->
+    <import addon="xbmc.python" version="2.25.0" />
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="addon.py">
+    <provides>executable</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en">Kodi meets DOOM!</summary>
+    <description lang="en">Advanced DOOM fronted for Kodi.</description>
+    <platform>all</platform>
+    <license>GNU General Public License version 2</license>
+    <email>wintermute0110@gmail.com</email>    
+    <forum></forum>
+    <website>https://github.com/Wintermute0110/plugin.program.advanced.DOOM.launcher/wiki</website>
+    <source>https://github.com/Wintermute0110/plugin.program.advanced.DOOM.launcher</source>
+    <assets>
+      <icon>media/icon.png</icon>
+      <fanart>media/fanart.jpg</fanart>
+      <screenshot>media/screenshot-01.jpg</screenshot>
+      <screenshot>media/screenshot-02.jpg</screenshot>
+      <screenshot>media/screenshot-03.jpg</screenshot>
+    </assets>
+    <news>Development version / Comment line 2</news>
+  </extension>
+</addon>

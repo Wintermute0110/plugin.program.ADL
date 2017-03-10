@@ -1,0 +1,3 @@
+[B]Advanced DOOM Launcher | version 0.9.0 | xx March 2017[/B]
+
+* Initial release.
