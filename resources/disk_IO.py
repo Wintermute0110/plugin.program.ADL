@@ -156,7 +156,10 @@ def fs_scan_pwads(pwad_file_list):
 
     return pwads
 
-            pwad_index_dic = fs_build_pwad_index_dic(pwads)
+def fs_build_pwad_index_dic(pwads):
+    pwad_index_dic = {}
+
+    return pwad_index_dic
 
 # >> Generate browser index. Given a directory the list of PWADs in that directory
 # >> must be get instantly.

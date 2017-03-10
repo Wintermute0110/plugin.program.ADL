@@ -41,18 +41,18 @@ __addon_type__    = __addon_obj__.getAddonInfo('type').decode('utf-8')
 # _FILE_PATH is a filename
 # _DIR is a directory (with trailing /)
 ADDONS_DATA_DIR         = FileName('special://profile/addon_data')
-PLUGIN_DATA_DIR         = ADDONS_DATA_DIR.join(__addon_id__)
+PLUGIN_DATA_DIR         = ADDONS_DATA_DIR.pjoin(__addon_id__)
 BASE_DIR                = FileName('special://profile')
 HOME_DIR                = FileName('special://home')
 KODI_FAV_FILE_PATH      = FileName('special://profile/favourites.xml')
-ADDONS_DIR              = HOME_DIR.join('addons')
-CURRENT_ADDON_DIR       = ADDONS_DIR.join(__addon_id__)
-IWADS_FILE_PATH         = PLUGIN_DATA_DIR.join('iwads.json')
-PWADS_FILE_PATH         = PLUGIN_DATA_DIR.join('pwads.json')
-PWADS_IDX_FILE_PATH     = PLUGIN_DATA_DIR.join('pwads_idx.json')
-LAUNCH_LOG_FILE_PATH    = PLUGIN_DATA_DIR.join('launcher.log')
-RECENT_PLAYED_FILE_PATH = PLUGIN_DATA_DIR.join('history.json')
-MOST_PLAYED_FILE_PATH   = PLUGIN_DATA_DIR.join('most_played.json')
+ADDONS_DIR              = HOME_DIR.pjoin('addons')
+CURRENT_ADDON_DIR       = ADDONS_DIR.pjoin(__addon_id__)
+IWADS_FILE_PATH         = PLUGIN_DATA_DIR.pjoin('iwads.json')
+PWADS_FILE_PATH         = PLUGIN_DATA_DIR.pjoin('pwads.json')
+PWADS_IDX_FILE_PATH     = PLUGIN_DATA_DIR.pjoin('pwads_idx.json')
+LAUNCH_LOG_FILE_PATH    = PLUGIN_DATA_DIR.pjoin('launcher.log')
+RECENT_PLAYED_FILE_PATH = PLUGIN_DATA_DIR.pjoin('history.json')
+MOST_PLAYED_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('most_played.json')
 
 # --- Main code -----------------------------------------------------------------------------------
 class Main:
@@ -135,14 +135,14 @@ class Main:
         self._render_IWAD_list()
 
         # >> Filesystem browser
-        self._render_root_list_row('[Browse filesystem ...]',    self._misc_url_1_arg('BROWSE_FS', '/'))
+        self._render_root_list_row('[Browse filesystem ...]',   self._misc_url_1_arg('BROWSE_FS', '/'))
 
         # >> Virtual Launchers
-        self._render_root_list_row('[Category browser ...]',     self._misc_url_1_arg('catalog', 'SL'))
-        self._render_root_list_row('[Mega WADs ...]',            self._misc_url_1_arg('catalog', 'SL'))
-        self._render_root_list_row('[Multiple level WADs ...]',  self._misc_url_1_arg('catalog', 'SL'))
-        self._render_root_list_row('[Single level WADs ...]',    self._misc_url_1_arg('catalog', 'SL'))
-        self._render_root_list_row('<Favourite WADs machines>',  self._misc_url_1_arg('command', 'SHOW_FAVS'))
+        self._render_root_list_row('[Category browser ...]',    self._misc_url_1_arg('catalog', 'SL'))
+        self._render_root_list_row('[Mega WADs ...]',           self._misc_url_1_arg('catalog', 'SL'))
+        self._render_root_list_row('[Multiple level WADs ...]', self._misc_url_1_arg('catalog', 'SL'))
+        self._render_root_list_row('[Single level WADs ...]',   self._misc_url_1_arg('catalog', 'SL'))
+        self._render_root_list_row('<Favourite WADs>',          self._misc_url_1_arg('command', 'SHOW_FAVS'))
         xbmcplugin.endOfDirectory(handle = self.addon_handle, succeeded = True, cacheToDisc = False)
 
     def _render_root_list_row(self, root_name, root_URL):
@@ -167,7 +167,8 @@ class Main:
 
     def _render_IWAD_list(self):
         # >> Open IWAD database
-        iwads = fs_load_JSON_file(IWADS_FILE_PATH)
+        iwads = fs_load_JSON_file(IWADS_FILE_PATH.getPath())
+        pwad_ids_dic = fs_load_JSON_file(PWADS_IDX_FILE_PATH.getPath())
 
         # >> Traverse and render
         self._set_Kodi_all_sorting_methods()
@@ -177,8 +178,8 @@ class Main:
 
     def _command_browse_fs(self, directory):
         # >> Open PWAD database and index
-        pwads = fs_load_JSON_file(PWADS_FILE_PATH)
-        pwad_index_dic = fs_load_JSON_file(PWADS_IDX_FILE_PATH)
+        pwads = fs_load_JSON_file(PWADS_FILE_PATH.getPath())
+        pwad_index_dic = fs_load_JSON_file(PWADS_IDX_FILE_PATH.getPath())
 
         # >> Traverse and render directories first
         pwad_ids_dic = pwad_index_dic[directory]
@@ -241,7 +242,7 @@ class Main:
             for root, directories, filenames in os.walk(doom_wad_dir):
                 # >> This produces one iteration for each directory found (including the root directory)
                 # >> See http://www.saltycrane.com/blog/2007/03/python-oswalk-example/
-                log_debug('Root "{0}"'.format(root)))
+                log_debug('Root "{0}"'.format(root))
                 # for directory in directories:
                 #     log_debug('Dir  "{0}"'.format(os.path.join(root, directory)))
                 
