@@ -11,7 +11,7 @@ Go to the [Wintermute0110 AEL repository] and download the ZIP file of the versi
 
 ## Installing the latest development version ##
 
-It is important that you follow this instructions or Advanced Emulator Launcher won't work well.
+It is important that you follow this instructions or Advanced DOOM Launcher won't work well.
 
   1) In this page click on the green button `Clone or Download` --> `Download ZIP`
 
