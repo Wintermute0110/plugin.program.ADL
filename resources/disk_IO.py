@@ -188,6 +188,7 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list):
             pwad['filename']   = file.getPath()
             pwad['num_levels'] = inwad.maps._n
             pwad['level_list'] = level_name_list
+            pwad['name']       = file.getBase_noext()
             if inwad.maps._n > 0:
                 # >> Create WAD info file. If NFO file exists just update automatic fields.
                 nfo_FN = FileName(file.getPath_noext() + '.nfo')
@@ -211,17 +212,36 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list):
 
 #
 # Generate browser index. Given a directory the list of PWADs in that directory must be get instantly.
-# pwad_index_dic = { 'dir_name_1' : ['filename_1', 'filename_2', ...], ... }
+# pwad_index_dic = { 
+#     'dir_name_1' : {
+#         'dirs' : ['dir_1', 'dir_2', ...], 
+#         'wads' : ['filename_1', 'filename_2', ...]
+#     },
+#     ... 
+# }
 #
 def fs_build_pwad_index_dic(doom_wad_dir, pwads):
     log_debug('Starting fs_build_pwad_index_dic() ...')
+    directories_set = set()
     pwad_index_dic = {}
     
+    # Make a list of all directories
     for pwad_key in pwads:
-        pwad = pwads[pwad_key]
-        wad_dir = pwad['dir']
-        if wad_dir not in pwad_index_dic: pwad_index_dic[wad_dir] = []
-        pwad_index_dic[wad_dir].append(pwad['filename'])
+        log_debug('Directory {0}'.format(pwads[pwad_key]['dir']))
+        directories_set.add(pwads[pwad_key]['dir'])
+
+    # Traverse list of directories and fill content
+    for dir_name in directories_set:
+        # Find PWADs in that directory
+        pwad_fn_list = []
+        for pwad_key in pwads:
+            pwad = pwads[pwad_key]
+            wad_dir = pwad['dir']
+            if wad_dir == dir_name: pwad_fn_list.append(pwad['filename'])
+        pwad_index_dic[dir_name] = { 'dirs' : [], 'wads' : pwad_fn_list }
+
+    # >> Workaround
+    pwad_index_dic['/'] = { 'dirs' : list(directories_set), 'wads' : [] }
 
     return pwad_index_dic
 

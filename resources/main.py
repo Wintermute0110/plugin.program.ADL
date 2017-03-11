@@ -180,7 +180,7 @@ class Main:
         # >> Traverse and render
         self._set_Kodi_all_sorting_methods()
         for iwad in sorted(iwads):
-            self._render_wad_row(iwad)
+            self._render_iwad_row(iwad)
 
     def _command_browse_fs(self, directory):
         log_debug('_command_browse_fs() directory "{0}"'.format(directory))
@@ -189,25 +189,31 @@ class Main:
         pwads = fs_load_JSON_file(PWADS_FILE_PATH.getPath())
         pwad_index_dic = fs_load_JSON_file(PWADS_IDX_FILE_PATH.getPath())
 
+        # >> Get dirs and wads
+        dirs = pwad_index_dic[directory]['dirs']
+        wads = pwad_index_dic[directory]['wads']
+        
         # >> Traverse and render directories first
-        pwad_ids_dic = pwad_index_dic[directory]
-
-        # >> Traverse and render PWADs
         self._set_Kodi_all_sorting_methods()
-        for pwad_filename in pwads:
+        for dir_name in dirs:
+            self._render_directory_row(dir_name)
+
+        # >> Traverse and render PWADs beloging to this directory
+        for pwad_filename in wads:
             pwad = pwads[pwad_filename]
-            self._render_wad_row(pwad)
+            self._render_pwad_row(pwad)
         xbmcplugin.endOfDirectory(handle = self.addon_handle, succeeded = True, cacheToDisc = False)
 
-    def _render_wad_row(self, wad):
+    def _render_iwad_row(self, wad):
         # --- Create listitem row ---
-        icon = 'DefaultFolder.png'
-        ICON_OVERLAY = 6
+        icon = 'DefaultProgram.png'
         title_str = wad['name']
+        fanart_path = wad['fanart'] if 'fanart' in wad else ''
 
+        ICON_OVERLAY = 6
         listitem = xbmcgui.ListItem(title_str, iconImage = icon)
-        # listitem.setProperty('fanart_image', category_dic['fanart'])
-        listitem.setInfo('video', {'Title'   : title_str, 'Overlay' : ICON_OVERLAY})
+        listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
+        if fanart_path: listitem.setArt({'fanart' : fanart_path})
 
         # --- Create context menu ---
         commands = []
@@ -218,10 +224,53 @@ class Main:
         listitem.addContextMenuItems(commands, replaceItems = True)
 
         # --- Add row ---
-        # URL = self._misc_url_2_arg('catalog', catalog_name, 'category', catalog_key)
-        # xbmcplugin.addDirectoryItem(handle = self.addon_handle, url = URL, listitem = listitem, isFolder = True)
-        URL = self._misc_url_2_arg('command', 'LAUNCH_IWAD', 'iwad', wad['filename'])
+        URL = self._misc_url_2_arg('command', 'LAUNCH_IWAD', 'pwad', wad['filename'])
         xbmcplugin.addDirectoryItem(handle = self.addon_handle, url = URL, listitem = listitem, isFolder = False)
+
+    def _render_pwad_row(self, wad):
+        # --- Create listitem row ---
+        icon = 'DefaultProgram.png'
+        title_str = wad['name']
+        fanart_path = wad['fanart'] if 'fanart' in wad else ''
+
+        ICON_OVERLAY = 6
+        listitem = xbmcgui.ListItem(title_str, iconImage = icon)
+        listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
+        if fanart_path: listitem.setArt({'fanart' : fanart_path})
+
+        # --- Create context menu ---
+        commands = []
+        URL_view = self._misc_url_1_arg_RunPlugin('command', 'VIEW')
+        commands.append(('View', URL_view ))
+        commands.append(('Kodi File Manager', 'ActivateWindow(filemanager)' ))
+        commands.append(('Add-on Settings', 'Addon.OpenSettings({0})'.format(__addon_id__) ))
+        listitem.addContextMenuItems(commands, replaceItems = True)
+
+        # --- Add row ---
+        URL = self._misc_url_2_arg('command', 'LAUNCH_PWAD', 'pwad', wad['filename'])
+        xbmcplugin.addDirectoryItem(handle = self.addon_handle, url = URL, listitem = listitem, isFolder = False)
+
+    def _render_directory_row(self, directory):
+        icon = 'DefaultFolder.png'
+        title_str = directory[1:] if directory[0] == '/' else directory
+        fanart_path = ''
+
+        ICON_OVERLAY = 6
+        listitem = xbmcgui.ListItem(title_str, iconImage = icon)
+        listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
+        if fanart_path: listitem.setArt({'fanart' : fanart_path})
+
+        # --- Create context menu ---
+        commands = []
+        URL_view = self._misc_url_1_arg_RunPlugin('command', 'VIEW')
+        commands.append(('View', URL_view ))
+        commands.append(('Kodi File Manager', 'ActivateWindow(filemanager)' ))
+        commands.append(('Add-on Settings', 'Addon.OpenSettings({0})'.format(__addon_id__) ))
+        listitem.addContextMenuItems(commands, replaceItems = True)
+
+        # --- Add row ---
+        URL = self._misc_url_2_arg('command', 'BROWSE_FS', 'dir', directory)
+        xbmcplugin.addDirectoryItem(handle = self.addon_handle, url = URL, listitem = listitem, isFolder = True)
 
     # ---------------------------------------------------------------------------------------------
     # Information display
@@ -250,10 +299,10 @@ class Main:
             for root, directories, filenames in os.walk(doom_wad_dir):
                 # >> This produces one iteration for each directory found (including the root directory)
                 # >> See http://www.saltycrane.com/blog/2007/03/python-oswalk-example/
-                log_debug('Root "{0}"'.format(root))
+                log_debug('_command_setup_plugin() Dir "{0}"'.format(root))
                 # for directory in directories:
                 #     log_debug('Dir  "{0}"'.format(os.path.join(root, directory)))
-                
+
                 # >> If root directory scan for IWADs only
                 if root == doom_wad_dir:
                     log_info('_command_setup_plugin() Adding files to IWAD scanner ...')
@@ -280,6 +329,11 @@ class Main:
             fs_write_JSON_file(IWADS_FILE_PATH.getPath(), iwads)
             fs_write_JSON_file(PWADS_FILE_PATH.getPath(), pwads)
             fs_write_JSON_file(PWADS_IDX_FILE_PATH.getPath(), pwad_index_dic)
+
+    # ---------------------------------------------------------------------------------------------
+    # Launch IWAD
+    # ---------------------------------------------------------------------------------------------
+
 
     # ---------------------------------------------------------------------------------------------
     # Launch PWAD
