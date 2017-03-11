@@ -18,8 +18,8 @@
     <website>https://github.com/Wintermute0110/plugin.program.advanced.DOOM.launcher/wiki</website>
     <source>https://github.com/Wintermute0110/plugin.program.advanced.DOOM.launcher</source>
     <assets>
-      <icon>media/icon.png</icon>
-      <fanart>media/fanart.jpg</fanart>
+      <icon>media/adl-icon.png</icon>
+      <fanart>media/adl-fanart.jpg</fanart>
       <screenshot>media/screenshot-01.jpg</screenshot>
       <screenshot>media/screenshot-02.jpg</screenshot>
       <screenshot>media/screenshot-03.jpg</screenshot>
