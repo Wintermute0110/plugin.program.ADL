@@ -23,11 +23,6 @@ import re, urllib, urllib2, urlparse, socket, exceptions, hashlib
 # --- Kodi stuff ---
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 
-# --- Modules/packages in this plugin ---
-from disk_IO import *
-from utils import *
-from utils_kodi import *
-
 # --- Addon object (used to access settings) ---
 __addon_obj__     = xbmcaddon.Addon()
 __addon_id__      = __addon_obj__.getAddonInfo('id').decode('utf-8')
@@ -36,6 +31,17 @@ __addon_version__ = __addon_obj__.getAddonInfo('version').decode('utf-8')
 __addon_author__  = __addon_obj__.getAddonInfo('author').decode('utf-8')
 __addon_profile__ = __addon_obj__.getAddonInfo('profile').decode('utf-8')
 __addon_type__    = __addon_obj__.getAddonInfo('type').decode('utf-8')
+
+# >> WORKAROUND!
+# >> In order for omg to work well "PLUGIN_DIR/resources" must be in the Python path.
+# >> Another solution is to put omg module in PLUGIN_DIR which is automatically in the path.
+addon_resources_dir_u = 'special://home/addons/{0}/resources'.format(__addon_id__)
+sys.path.insert(0, xbmc.translatePath(addon_resources_dir_u))
+
+# --- Modules/packages in this plugin ---
+from disk_IO import *
+from utils import *
+from utils_kodi import *
 
 # --- Addon paths and constant definition ---
 # _FILE_PATH is a filename
@@ -73,9 +79,11 @@ class Main:
         log_debug('---------- Called ADL Main::run_plugin() constructor ----------')
         log_debug('sys.platform {0}'.format(sys.platform))
         log_debug('Python version ' + sys.version.replace('\n', ''))
+        log_debug('__addon_id__      {0}'.format(__addon_id__))
         log_debug('__addon_version__ {0}'.format(__addon_version__))
         for i in range(len(sys.argv)): log_debug('sys.argv[{0}] = "{1}"'.format(i, sys.argv[i]))
-
+        # log_debug('sys.path {0}'.format(sys.path))
+        
         # --- Addon data paths creation ---
         if not PLUGIN_DATA_DIR.exists():          PLUGIN_DATA_DIR.makedirs()
 
