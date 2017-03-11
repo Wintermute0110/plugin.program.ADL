@@ -139,8 +139,9 @@ def fs_scan_iwads(root_file_list):
 
     return iwads
 
-def fs_scan_pwads(pwad_file_list):
+def fs_scan_pwads(doom_wad_dir, pwad_file_list):
     log_debug('Starting fs_scan_pwads() ...')
+    log_debug('Starting fs_scan_pwads() doom_wad_dir = "{0}"'.format(doom_wad_dir))
     pwads = {}
     for file in pwad_file_list:
         file_str = file.getPath()
@@ -157,26 +158,27 @@ def fs_scan_pwads(pwad_file_list):
             # >> Create WAD info file
 
             # >> Add PWAD to database
+            pwad_dir = file.getDir()
+            wad_dir = pwad_dir.replace(doom_wad_dir, '/')
             pwad = fs_new_PWAD_asset()
-            pwad['dir']      = file.getDir()
+            pwad['dir']      = wad_dir
             pwad['filename'] = file.getPath()
             pwads[pwad['filename']] = pwad
 
     return pwads
 
-def fs_build_pwad_index_dic(pwads):
-    pwad_index_dic = {}
-
-    return pwad_index_dic
-
 #
 # Generate browser index. Given a directory the list of PWADs in that directory must be get instantly.
-# pwad_index_dic = { 'dir_name_1' : {'filename_1', 'filename_2', ...}, ... }
+# pwad_index_dic = { 'dir_name_1' : ['filename_1', 'filename_2', ...], ... }
 #
-def fs_build_pwad_index_dic(pwads):
+def fs_build_pwad_index_dic(doom_wad_dir, pwads):
+    log_debug('Starting fs_build_pwad_index_dic() ...')
     pwad_index_dic = {}
     
-    for pwad in pwads:
-        pass
+    for pwad_key in pwads:
+        pwad = pwads[pwad_key]
+        wad_dir = pwad['dir']
+        if wad_dir not in pwad_index_dic: pwad_index_dic[wad_dir] = []
+        pwad_index_dic[wad_dir].append(pwad['filename'])
 
     return pwad_index_dic

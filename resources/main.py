@@ -96,11 +96,11 @@ class Main:
         # --- Process command ---------------------------------------------------------------------
         command = args['command'][0]
         if command == 'BROWSE_FS':
-            self._command_browse_fs()
+            self._command_browse_fs(args['dir'][0])
         elif command == 'SETUP_PLUGIN':
             self._command_setup_plugin()
         else:
-            kodi_dialog_OK('Unknown command {0}'.format(args['command'][0]) )
+            kodi_dialog_OK('Unknown command {0}'.format(command))
 
         log_debug('Advanced DOOM Launcher exit')
 
@@ -135,13 +135,13 @@ class Main:
         self._render_IWAD_list()
 
         # >> Filesystem browser
-        self._render_root_list_row('[Browse filesystem ...]',   self._misc_url_1_arg('BROWSE_FS', '/'))
+        self._render_root_list_row('[Browse filesystem ...]',   self._misc_url_2_arg('command', 'BROWSE_FS', 'dir', '/'))
 
         # >> Virtual Launchers
-        self._render_root_list_row('[Category browser ...]',    self._misc_url_1_arg('catalog', 'SL'))
-        self._render_root_list_row('[Mega WADs ...]',           self._misc_url_1_arg('catalog', 'SL'))
-        self._render_root_list_row('[Multiple level WADs ...]', self._misc_url_1_arg('catalog', 'SL'))
-        self._render_root_list_row('[Single level WADs ...]',   self._misc_url_1_arg('catalog', 'SL'))
+        # self._render_root_list_row('[Category browser ...]',    self._misc_url_1_arg('command', 'BROWSE_CATEGORIES'))
+        # self._render_root_list_row('[Mega WADs ...]',           self._misc_url_1_arg('command', 'BROWSE_MEGAWADS'))
+        # self._render_root_list_row('[Multiple level WADs ...]', self._misc_url_1_arg('command', 'BROWSE_ML_WADS'))
+        # self._render_root_list_row('[Single level WADs ...]',   self._misc_url_1_arg('command', 'BROWSE_SL_WADS'))
         self._render_root_list_row('<Favourite WADs>',          self._misc_url_1_arg('command', 'SHOW_FAVS'))
         xbmcplugin.endOfDirectory(handle = self.addon_handle, succeeded = True, cacheToDisc = False)
 
@@ -171,10 +171,12 @@ class Main:
 
         # >> Traverse and render
         self._set_Kodi_all_sorting_methods()
-        for iwad in iwads:
+        for iwad in sorted(iwads):
             self._render_wad_row(iwad)
 
     def _command_browse_fs(self, directory):
+        log_debug('_command_browse_fs() directory "{0}"'.format(directory))
+
         # >> Open PWAD database and index
         pwads = fs_load_JSON_file(PWADS_FILE_PATH.getPath())
         pwad_index_dic = fs_load_JSON_file(PWADS_IDX_FILE_PATH.getPath())
@@ -184,7 +186,7 @@ class Main:
 
         # >> Traverse and render PWADs
         self._set_Kodi_all_sorting_methods()
-        for pwad_filename in pwad_ids_dic:
+        for pwad_filename in pwads:
             pwad = pwads[pwad_filename]
             self._render_wad_row(pwad)
         xbmcplugin.endOfDirectory(handle = self.addon_handle, succeeded = True, cacheToDisc = False)
@@ -260,8 +262,8 @@ class Main:
 
             # >> Now scan for actual IWADs/PWADs
             iwads = fs_scan_iwads(root_file_list)
-            pwads = fs_scan_pwads(pwad_file_list)
-            pwad_index_dic = fs_build_pwad_index_dic(pwads)
+            pwads = fs_scan_pwads(doom_wad_dir, pwad_file_list)
+            pwad_index_dic = fs_build_pwad_index_dic(doom_wad_dir, pwads)
             # log_info(pprint.pprint(iwads))
             # log_info(pprint.pprint(pwads))
             # log_info(pprint.pprint(pwad_index_dic))
