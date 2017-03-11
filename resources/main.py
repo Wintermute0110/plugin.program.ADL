@@ -59,6 +59,7 @@ PWADS_IDX_FILE_PATH     = PLUGIN_DATA_DIR.pjoin('pwads_idx.json')
 LAUNCH_LOG_FILE_PATH    = PLUGIN_DATA_DIR.pjoin('launcher.log')
 RECENT_PLAYED_FILE_PATH = PLUGIN_DATA_DIR.pjoin('history.json')
 MOST_PLAYED_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('most_played.json')
+DOOM_OUTPUT_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('doom_output.log')
 
 # --- Main code -----------------------------------------------------------------------------------
 class Main:
@@ -106,7 +107,13 @@ class Main:
         if command == 'BROWSE_FS':
             self._command_browse_fs(args['dir'][0])
         elif command == 'SETUP_PLUGIN':
-            self._command_setup_plugin()
+            self._command_setup_plugin() 
+
+        elif command == 'LAUNCH_IWAD':
+            self._run_pwad(args['iwad'][0])
+        elif command == 'LAUNCH_PWAD':
+            self._run_pwad(args['pwad'][0])
+
         else:
             kodi_dialog_OK('Unknown command {0}'.format(command))
 
@@ -333,57 +340,34 @@ class Main:
     # ---------------------------------------------------------------------------------------------
     # Launch IWAD
     # ---------------------------------------------------------------------------------------------
-
+    def _run_iwad(self, filename):
+        pass
 
     # ---------------------------------------------------------------------------------------------
     # Launch PWAD
     # ---------------------------------------------------------------------------------------------
-    def _run_machine(self, machine_name, location):
-        log_info('_run_machine() Launching MAME machine  "{0}"'.format(machine_name))
-        log_info('_run_machine() Launching MAME location "{0}"'.format(location))
-
-        # >> If launching from Favourites read ROM from Fav database
-        if location and location == 'MAME_FAV':
-            fav_machines = fs_load_JSON_file(PATHS.FAV_MACHINES_PATH.getPath())
-            machine = fav_machines[machine_name]
-            assets  = machine['assets']
+    def _run_pwad(self, filename):
+        log_info('_run_pwad() Launching PWAD "{0}"'.format(filename))
 
         # >> Get paths
-        mame_prog_FN = FileName(self.settings['mame_prog'])
+        doom_prog_FN = FileName('/usr/games/prboom-plus')
 
         # >> Check if ROM exist
-        if not self.settings['rom_path']:
-            kodi_dialog_OK('ROM directory not configured.')
+        PWAD_FN = FileName(filename)
+        if not PWAD_FN.exists():
+            kodi_dialog_OK('PWAD does not exist.')
             return
-        ROM_path_FN = FileName(self.settings['rom_path'])
-        if not ROM_path_FN.isdir():
-            kodi_dialog_OK('ROM directory does not exist.')
-            return
-        ROM_FN = ROM_path_FN.pjoin(machine_name + '.zip')
-        # if not ROM_FN.exists():
-        #     kodi_dialog_OK('ROM "{0}" not found.'.format(ROM_FN.getBase()))
-        #     return
-
-        # >> Choose BIOS (only available for Favourite Machines)
-        if location and location == 'MAME_FAV' and len(machine['bios_name']) > 1:
-            dialog = xbmcgui.Dialog()
-            m_index = dialog.select('Select BIOS', machine['bios_desc'])
-            if m_index < 0: return
-            BIOS_name = machine['bios_name'][m_index]
-        else:
-            BIOS_name = ''
 
         # >> Launch machine using subprocess module
-        (mame_dir, mame_exec) = os.path.split(mame_prog_FN.getPath())
-        log_info('_run_machine() mame_prog_FN "{0}"'.format(mame_prog_FN.getPath()))    
-        log_info('_run_machine() mame_dir     "{0}"'.format(mame_dir))
-        log_info('_run_machine() mame_exec    "{0}"'.format(mame_exec))
-        log_info('_run_machine() machine_name "{0}"'.format(machine_name))
-        log_info('_run_machine() BIOS_name    "{0}"'.format(BIOS_name))
+        (doom_dir, doom_exec) = os.path.split(doom_prog_FN.getPath())
+        log_info('_run_pwad() doom_prog_FN "{0}"'.format(doom_prog_FN.getPath()))    
+        log_info('_run_pwad() doom_dir     "{0}"'.format(doom_dir))
+        log_info('_run_pwad() doom_exec    "{0}"'.format(doom_exec))
+        log_info('_run_pwad() PWAD         "{0}"'.format(PWAD_FN.getPath()))
 
         # >> Prevent a console window to be shown in Windows. Not working yet!
         if sys.platform == 'win32':
-            log_info('_run_machine() Platform is win32. Creating _info structure')
+            log_info('_run_pwad() Platform is win32. Creating _info structure')
             _info = subprocess.STARTUPINFO()
             _info.dwFlags = subprocess.STARTF_USESHOWWINDOW
             # See https://msdn.microsoft.com/en-us/library/ms633548(v=vs.85).aspx
@@ -399,19 +383,17 @@ class Main:
             # >> MAME console window is shown, MAME graphical window on top, Kodi on bottom.
             _info.wShowWindow = 1
         else:
-            log_info('_run_machine() _info is None')
+            log_info('_run_pwad() _info is None')
             _info = None
 
         # >> Launch MAME
-        # arg_list = [mame_prog_FN.getPath(), '-window', machine_name]
-        if BIOS_name: arg_list = [mame_prog_FN.getPath(), machine_name, '-bios', BIOS_name]
-        else:         arg_list = [mame_prog_FN.getPath(), machine_name]
-        log_info('arg_list = {0}'.format(arg_list))
-        log_info('_run_machine() Calling subprocess.Popen()...')
-        with open(PATHS.MAME_OUTPUT_PATH.getPath(), 'wb') as f:
-            p = subprocess.Popen(arg_list, cwd = mame_dir, startupinfo = _info, stdout = f, stderr = subprocess.STDOUT)
+        arg_list = [doom_prog_FN.getPath(), '/home/mendi/Games/doom/doom.wad', '-file', PWAD_FN.getPath()]
+        log_info('_run_pwad() arg_list {0}'.format(arg_list))
+        log_info('_run_pwad() Calling subprocess.Popen()...')
+        with open(DOOM_OUTPUT_FILE_PATH.getPath(), 'wb') as f:
+            p = subprocess.Popen(arg_list, cwd = doom_dir, startupinfo = _info, stdout = f, stderr = subprocess.STDOUT)
         p.wait()
-        log_info('_run_machine() Exiting function')
+        log_info('_run_pwad() Exiting function')
 
     # ---------------------------------------------------------------------------------------------
     # Misc functions
