@@ -28,10 +28,13 @@ import re
 # ~~~ Using ElementTree seems to solve the problem
 import xml.etree.ElementTree as ET
 
-# --- AEL packages ---
+# --- ADL packages ---
 from utils import *
 try:    from utils_kodi import *
 except: from utils_kodi_standalone import *
+
+# --- OMG library ---
+# from omg.wad import *
 
 # -------------------------------------------------------------------------------------------------
 # Advanced DOOM Launcher data model
@@ -42,12 +45,12 @@ except: from utils_kodi_standalone import *
 iwad_list = [
     # Doom
     ['Doom (v1.9)',                     11159840, '1cd63c5ddff1bf8ce844237f580e9cf3'],
-    ['Doom (v1.9ud)',                   12408292, 'c4fe9fd920207691a9f493668e0a2083'],
-    ['Doom (BFG)',                      12487824, 'fb35c4a5a9fd49ec29ab6e900572c524'],
+    ['The Ultimate Doom (v1.9)',        12408292, 'c4fe9fd920207691a9f493668e0a2083'],
+    ['Doom (BFG edition)',              12487824, 'fb35c4a5a9fd49ec29ab6e900572c524'],
     ['Doom (v1.8)',                     11159840, '11e1cd216801ea2657723abc86ecb01f'],
     # Doom 2
     ['Doom 2 (v1.9)',                   14604584, '25e1459ca71d321525f84628f45ca8cd'],
-    ['Doom 2 (BFG)',                    14691821, 'c3bea40570c23e511a7ed3ebcd9865f7'],
+    ['Doom 2 (BFG edition)',            14691821, 'c3bea40570c23e511a7ed3ebcd9865f7'],
     # TNT
     ['TNT: Evilution',                  18195736, '4e158d9953c79ccf97bd0663244cc6b6'],
     ['TNT: Evilution (Rev A)',          18654796, '1d39e405bf6ee3df69a8d2646c8d5c49'],
@@ -118,19 +121,20 @@ def fs_scan_iwads(root_file_list):
     iwads = []
     for file in root_file_list:
         # >> For now just check size of the IWAD. Later check MD5
-        stat_obj = os.stat(file)
+        stat_obj = os.stat(file.getPath())
         file_size = stat_obj.st_size
         IWAD_found = False
         for iwad_info in iwad_list:
             if file_size == iwad_info[1]:
                 IWAD_found = True
                 IWAD_info = iwad_info
+                break
         if IWAD_found: 
-            log_info('Found IWAD {0}'.format(iwad['name']))
+            log_info('Found IWAD {0}'.format(IWAD_info[0]))
             iwad = fs_new_IWAD_asset()
-            iwad['filename'] = file
-            iwad['name']     = iwad_info[0]
-            iwad['size']     = iwad_info[1]
+            iwad['filename'] = file.getPath()
+            iwad['name']     = IWAD_info[0]
+            iwad['size']     = IWAD_info[1]
             iwads.append(iwad)
 
     return iwads
@@ -139,19 +143,23 @@ def fs_scan_pwads(pwad_file_list):
     log_debug('Starting fs_scan_pwads() ...')
     pwads = {}
     for file in pwad_file_list:
-        extension = file[-3:]
+        file_str = file.getPath()
+        extension = file_str[-3:]
         # >> Check if file is a WAD file
-        if extension.lower.endswith('wad'):
-            log_debug('Processing PWAD "{0}"'.format(file))
+        if extension.lower().endswith('wad'):
+            log_debug('Processing PWAD "{0}"'.format(file.getPath()))
             
             # >> Get metadata for this PWAD
-            
+            # inwad = WAD()
+            # inwad.from_file(file.getPath())
+            # log_debug('Number of levels {0}'.format(inwad.maps._n))
+
             # >> Create WAD info file
 
             # >> Add PWAD to database
             pwad = fs_new_PWAD_asset()
-            pwad['dir']      = file
-            pwad['filename'] = file
+            pwad['dir']      = file.getDir()
+            pwad['filename'] = file.getPath()
             pwads[pwad['filename']] = pwad
 
     return pwads
@@ -161,12 +169,14 @@ def fs_build_pwad_index_dic(pwads):
 
     return pwad_index_dic
 
-# >> Generate browser index. Given a directory the list of PWADs in that directory
-# >> must be get instantly.
+#
+# Generate browser index. Given a directory the list of PWADs in that directory must be get instantly.
 # pwad_index_dic = { 'dir_name_1' : {'filename_1', 'filename_2', ...}, ... }
+#
 def fs_build_pwad_index_dic(pwads):
     pwad_index_dic = {}
     
-    # for pwad in pwads:
+    for pwad in pwads:
+        pass
 
     return pwad_index_dic

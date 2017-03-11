@@ -16,9 +16,9 @@
 
 # --- Python standard library ---
 from __future__ import unicode_literals
-import sys, os, shutil, fnmatch, string, time, traceback
+import sys, os, shutil, fnmatch, string, time, traceback, pprint
 import re, urllib, urllib2, urlparse, socket, exceptions, hashlib
-from collections import OrderedDict
+# from collections import OrderedDict
 
 # --- Kodi stuff ---
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon
@@ -88,19 +88,19 @@ class Main:
         # log_debug('content_type = {0}'.format(self.content_type))
 
         # --- If no com parameter display addon root directory ---
-        if 'com' not in args:
+        if 'command' not in args:
             self._command_render_main_menu()
             log_debug('Advanced DOOM Launcher exit (addon root)')
             return
 
         # --- Process command ---------------------------------------------------------------------
-        command = args['com'][0]
+        command = args['command'][0]
         if command == 'BROWSE_FS':
             self._command_browse_fs()
-        elif command == 'EDIT_CATEGORY':
-            self._command_edit_category(args['catID'][0])
+        elif command == 'SETUP_PLUGIN':
+            self._command_setup_plugin()
         else:
-            kodi_dialog_OK('Unknown command {0}'.format(args['com'][0]) )
+            kodi_dialog_OK('Unknown command {0}'.format(args['command'][0]) )
 
         log_debug('Advanced DOOM Launcher exit')
 
@@ -168,13 +168,11 @@ class Main:
     def _render_IWAD_list(self):
         # >> Open IWAD database
         iwads = fs_load_JSON_file(IWADS_FILE_PATH.getPath())
-        pwad_ids_dic = fs_load_JSON_file(PWADS_IDX_FILE_PATH.getPath())
 
         # >> Traverse and render
         self._set_Kodi_all_sorting_methods()
-        for pwad_filename in pwad_ids_dic:
-            pwad = pwads[pwad_filename]
-            self._render_wad_row(pwad)
+        for iwad in iwads:
+            self._render_wad_row(iwad)
 
     def _command_browse_fs(self, directory):
         # >> Open PWAD database and index
@@ -191,15 +189,15 @@ class Main:
             self._render_wad_row(pwad)
         xbmcplugin.endOfDirectory(handle = self.addon_handle, succeeded = True, cacheToDisc = False)
 
-    def _render_wad_row(self, pwad):
+    def _render_wad_row(self, wad):
         # --- Create listitem row ---
         icon = 'DefaultFolder.png'
         ICON_OVERLAY = 6
-        title_str = '{0} [COLOR orange]({1} machines)[/COLOR]'.format(catalog_key, num_machines)
+        title_str = wad['name']
 
         listitem = xbmcgui.ListItem(title_str, iconImage = icon)
         # listitem.setProperty('fanart_image', category_dic['fanart'])
-        listitem.setInfo('video', {'Title'   : title_str, 'Overlay' : ICON_OVERLAY, 'size' : num_machines})
+        listitem.setInfo('video', {'Title'   : title_str, 'Overlay' : ICON_OVERLAY})
 
         # --- Create context menu ---
         commands = []
@@ -212,7 +210,7 @@ class Main:
         # --- Add row ---
         # URL = self._misc_url_2_arg('catalog', catalog_name, 'category', catalog_key)
         # xbmcplugin.addDirectoryItem(handle = self.addon_handle, url = URL, listitem = listitem, isFolder = True)
-        URL = self._misc_url_2_arg('command', 'LAUNCH', 'machine', machine_name)
+        URL = self._misc_url_2_arg('command', 'LAUNCH_IWAD', 'iwad', wad['filename'])
         xbmcplugin.addDirectoryItem(handle = self.addon_handle, url = URL, listitem = listitem, isFolder = False)
 
     # ---------------------------------------------------------------------------------------------
@@ -248,25 +246,30 @@ class Main:
                 
                 # >> If root directory scan for IWADs only
                 if root == doom_wad_dir:
+                    log_info('_command_setup_plugin() Adding files to IWAD scanner ...')
                     for filename in filenames: 
                         log_debug('File "{0}"'.format(os.path.join(root, filename)))
-                        root_file_list = os.path.join(root, filename)
+                        root_file_list.append(FileName(os.path.join(root, filename)))
 
                 # >> If not scan for PWADs
                 else:
-                    log_info('_command_setup_plugin() Scanning for PWADs ...')
+                    log_info('_command_setup_plugin() Adding files to PWAD scanner ...')
                     for filename in filenames: 
                         log_debug('File "{0}"'.format(os.path.join(root, filename)))
-                        pwad_file_list = os.path.join(root, filename)
+                        pwad_file_list.append(FileName(os.path.join(root, filename)))
 
             # >> Now scan for actual IWADs/PWADs
             iwads = fs_scan_iwads(root_file_list)
             pwads = fs_scan_pwads(pwad_file_list)
             pwad_index_dic = fs_build_pwad_index_dic(pwads)
+            # log_info(pprint.pprint(iwads))
+            # log_info(pprint.pprint(pwads))
+            # log_info(pprint.pprint(pwad_index_dic))
 
             # >> Save databases
-            fs_write_JSON_file(IWADS_FILE_PATH, iwads)
-            fs_write_JSON_file(PWADS_FILE_PATH, pwads)
+            fs_write_JSON_file(IWADS_FILE_PATH.getPath(), iwads)
+            fs_write_JSON_file(PWADS_FILE_PATH.getPath(), pwads)
+            fs_write_JSON_file(PWADS_IDX_FILE_PATH.getPath(), pwad_index_dic)
 
     # ---------------------------------------------------------------------------------------------
     # Launch PWAD
