@@ -5,9 +5,9 @@ PWAD and MegaWADs.
 
 ## Installing the latest released version ##
 
-Go to the [Wintermute0110 AEL repository] and download the ZIP file of the version you want.
+Go to the [Wintermute0110 repository] and download the ZIP file of the version you want.
 
-[Wintermute0110 AEL repository]: https://github.com/Wintermute0110/repository.wintermute0110/tree/master/plugin.program.advanced.doom.launcher
+[Wintermute0110 repository]: https://github.com/Wintermute0110/repository.wintermute0110
 
 ## Installing the latest development version ##
 
