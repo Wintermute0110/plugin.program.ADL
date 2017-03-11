@@ -350,7 +350,9 @@ class Main:
         log_info('_run_pwad() Launching PWAD "{0}"'.format(filename))
 
         # >> Get paths
-        doom_prog_FN = FileName('/usr/games/prboom-plus')
+        # doom_exe_path = '/usr/games/prboom-plus'
+        doom_exe_path = '/usr/games/chocolate-doom'
+        doom_prog_FN = FileName(doom_exe_path)
 
         # >> Check if ROM exist
         PWAD_FN = FileName(filename)
@@ -365,9 +367,16 @@ class Main:
         log_info('_run_pwad() doom_exec    "{0}"'.format(doom_exec))
         log_info('_run_pwad() PWAD         "{0}"'.format(PWAD_FN.getPath()))
 
+        # >> Argument list
+        arg_list = [doom_prog_FN.getPath(), '-iwad', '/home/mendi/Games/doom/doom.wad', '-file', PWAD_FN.getPath()]
+        log_info('_run_pwad() arg_list {0}'.format(arg_list))
+
+        self._run_process(arg_list, doom_dir)
+
+    def _run_process(self, arg_list, exec_dir):
         # >> Prevent a console window to be shown in Windows. Not working yet!
         if sys.platform == 'win32':
-            log_info('_run_pwad() Platform is win32. Creating _info structure')
+            log_info('_run_process() Platform is win32. Creating _info structure')
             _info = subprocess.STARTUPINFO()
             _info.dwFlags = subprocess.STARTF_USESHOWWINDOW
             # See https://msdn.microsoft.com/en-us/library/ms633548(v=vs.85).aspx
@@ -383,17 +392,15 @@ class Main:
             # >> MAME console window is shown, MAME graphical window on top, Kodi on bottom.
             _info.wShowWindow = 1
         else:
-            log_info('_run_pwad() _info is None')
+            log_info('_run_process() _info is None')
             _info = None
 
-        # >> Launch MAME
-        arg_list = [doom_prog_FN.getPath(), '/home/mendi/Games/doom/doom.wad', '-file', PWAD_FN.getPath()]
-        log_info('_run_pwad() arg_list {0}'.format(arg_list))
-        log_info('_run_pwad() Calling subprocess.Popen()...')
+        # >> Launch DOOM
+        log_info('_run_process() Calling subprocess.Popen()...')
         with open(DOOM_OUTPUT_FILE_PATH.getPath(), 'wb') as f:
-            p = subprocess.Popen(arg_list, cwd = doom_dir, startupinfo = _info, stdout = f, stderr = subprocess.STDOUT)
+            p = subprocess.Popen(arg_list, cwd = exec_dir, startupinfo = _info, stdout = f, stderr = subprocess.STDOUT)
         p.wait()
-        log_info('_run_pwad() Exiting function')
+        log_info('_run_process() Exiting function')
 
     # ---------------------------------------------------------------------------------------------
     # Misc functions
