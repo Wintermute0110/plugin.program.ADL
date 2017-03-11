@@ -110,7 +110,7 @@ class Main:
             self._command_setup_plugin() 
 
         elif command == 'LAUNCH_IWAD':
-            self._run_pwad(args['iwad'][0])
+            self._run_iwad(args['iwad'][0])
         elif command == 'LAUNCH_PWAD':
             self._run_pwad(args['pwad'][0])
 
@@ -150,14 +150,14 @@ class Main:
         self._render_IWAD_list()
 
         # >> Filesystem browser
-        self._render_root_list_row('[Browse filesystem ...]',   self._misc_url_2_arg('command', 'BROWSE_FS', 'dir', '/'))
+        self._render_root_list_row('[Browse filesystem]', self._misc_url_2_arg('command', 'BROWSE_FS', 'dir', '/'))
 
         # >> Virtual Launchers
-        # self._render_root_list_row('[Category browser ...]',    self._misc_url_1_arg('command', 'BROWSE_CATEGORIES'))
-        # self._render_root_list_row('[Mega WADs ...]',           self._misc_url_1_arg('command', 'BROWSE_MEGAWADS'))
-        # self._render_root_list_row('[Multiple level WADs ...]', self._misc_url_1_arg('command', 'BROWSE_ML_WADS'))
-        # self._render_root_list_row('[Single level WADs ...]',   self._misc_url_1_arg('command', 'BROWSE_SL_WADS'))
-        self._render_root_list_row('<Favourite WADs>',          self._misc_url_1_arg('command', 'SHOW_FAVS'))
+        # self._render_root_list_row('[Category browser]',    self._misc_url_1_arg('command', 'BROWSE_CATEGORIES'))
+        # self._render_root_list_row('[Mega WADs]',           self._misc_url_1_arg('command', 'BROWSE_MEGAWADS'))
+        # self._render_root_list_row('[Multiple level WADs]', self._misc_url_1_arg('command', 'BROWSE_ML_WADS'))
+        # self._render_root_list_row('[Single level WADs]',   self._misc_url_1_arg('command', 'BROWSE_SL_WADS'))
+        # self._render_root_list_row('<Favourite WADs>',      self._misc_url_1_arg('command', 'SHOW_FAVS'))
         xbmcplugin.endOfDirectory(handle = self.addon_handle, succeeded = True, cacheToDisc = False)
 
     def _render_root_list_row(self, root_name, root_URL):
@@ -231,7 +231,7 @@ class Main:
         listitem.addContextMenuItems(commands, replaceItems = True)
 
         # --- Add row ---
-        URL = self._misc_url_2_arg('command', 'LAUNCH_IWAD', 'pwad', wad['filename'])
+        URL = self._misc_url_2_arg('command', 'LAUNCH_IWAD', 'iwad', wad['filename'])
         xbmcplugin.addDirectoryItem(handle = self.addon_handle, url = URL, listitem = listitem, isFolder = False)
 
     def _render_pwad_row(self, wad):
@@ -341,7 +341,31 @@ class Main:
     # Launch IWAD
     # ---------------------------------------------------------------------------------------------
     def _run_iwad(self, filename):
-        pass
+        log_info('_run_iwad() Launching PWAD "{0}"'.format(filename))
+
+        # >> Get paths
+        # doom_exe_path = '/usr/games/prboom-plus'
+        doom_exe_path = '/usr/games/chocolate-doom'
+        doom_prog_FN = FileName(doom_exe_path)
+
+        # >> Check if ROM exist
+        IWAD_FN = FileName(filename)
+        if not IWAD_FN.exists():
+            kodi_dialog_OK('IWAD does not exist.')
+            return
+
+        # >> Launch machine using subprocess module
+        (doom_dir, doom_exec) = os.path.split(doom_prog_FN.getPath())
+        log_info('_run_iwad() doom_prog_FN "{0}"'.format(doom_prog_FN.getPath()))    
+        log_info('_run_iwad() doom_dir     "{0}"'.format(doom_dir))
+        log_info('_run_iwad() doom_exec    "{0}"'.format(doom_exec))
+        log_info('_run_iwad() IWAD_FN      "{0}"'.format(IWAD_FN.getPath()))
+
+        # >> Argument list
+        arg_list = [doom_prog_FN.getPath(), '-iwad', IWAD_FN.getPath()]
+        log_info('_run_iwad() arg_list {0}'.format(arg_list))
+
+        self._run_process(arg_list, doom_dir)
 
     # ---------------------------------------------------------------------------------------------
     # Launch PWAD
@@ -365,7 +389,7 @@ class Main:
         log_info('_run_pwad() doom_prog_FN "{0}"'.format(doom_prog_FN.getPath()))    
         log_info('_run_pwad() doom_dir     "{0}"'.format(doom_dir))
         log_info('_run_pwad() doom_exec    "{0}"'.format(doom_exec))
-        log_info('_run_pwad() PWAD         "{0}"'.format(PWAD_FN.getPath()))
+        log_info('_run_pwad() PWAD_FN      "{0}"'.format(PWAD_FN.getPath()))
 
         # >> Argument list
         arg_list = [doom_prog_FN.getPath(), '-iwad', '/home/mendi/Games/doom/doom.wad', '-file', PWAD_FN.getPath()]
