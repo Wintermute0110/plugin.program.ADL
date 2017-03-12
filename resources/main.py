@@ -347,8 +347,7 @@ class Main:
         log_info('_run_iwad() Launching PWAD "{0}"'.format(filename))
 
         # >> Get paths
-        # doom_exe_path = '/usr/games/prboom-plus'
-        doom_exe_path = '/usr/games/chocolate-doom'
+        doom_exe_path = self.settings['doom_prog']
         doom_prog_FN = FileName(doom_exe_path)
 
         # >> Check if ROM exist
@@ -377,8 +376,7 @@ class Main:
         log_info('_run_pwad() Launching PWAD "{0}"'.format(filename))
 
         # >> Get paths
-        # doom_exe_path = '/usr/games/prboom-plus'
-        doom_exe_path = '/usr/games/chocolate-doom'
+        doom_exe_path = self.settings['doom_prog']
         doom_prog_FN = FileName(doom_exe_path)
 
         # >> Check if ROM exist
