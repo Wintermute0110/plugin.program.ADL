@@ -21,7 +21,7 @@ import codecs, time
 import subprocess
 import re
 try:
-    from PIL import Image, ImageDraw
+    from PIL import Image, ImageDraw, ImageFont
     PILLOW_AVAILABLE = True
 except:
     PILLOW_AVAILABLE = False
@@ -382,12 +382,39 @@ def drawposter(pwad, filename, FONT_FILE_PATH):
     font = ImageFont.truetype(font_filename, FONTSIZE)
 
     # --- Draw text ---
-    draw.text((XMARGIN, YMARGIN + T_LINES_Y[0]), 'ENGINE: DOOM 1', (255, 100, 100), font = font)
-    draw.text((XMARGIN, YMARGIN + T_LINES_Y[2]), 'NUMBER of LEVELS: 32', (255, 100, 100), font = font)
-
+    iwad_str       = 'IWAD: {0}'.format(pwad['iwad'])
+    engine_str     = 'ENGINE: {0}'.format(pwad['engine'])
+    num_levels_str = 'NUMBER of LEVELS: {0}'.format(pwad['num_levels'])
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[0]), iwad_str, (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[1]), engine_str, (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[2]), num_levels_str, (255, 100, 100), font = font)
     draw.text((XMARGIN, YMARGIN + T_LINES_Y[4]), 'LEVELS:', (255, 100, 100), font = font)
-    draw.text((XMARGIN, YMARGIN + T_LINES_Y[5]), 'E1M1 E1M2 E1M3 E1M4', (255, 100, 100), font = font)
-    draw.text((XMARGIN, YMARGIN + T_LINES_Y[6]), 'MAP01 MAP02 MAP03 MAP04', (255, 100, 100), font = font)
+    level_counter = 0
+    text_line_counter = 5
+    LEVELS_PER_LINE = 4
+    if len(pwad['level_list']) <= LEVELS_PER_LINE:
+        # --- Levels fit in one line ---
+        line_list = []
+        for level in pwad['level_list']:
+            line_list.append(level)
+        line_str = ' '.join(line_list)
+        draw.text((XMARGIN, YMARGIN + T_LINES_Y[text_line_counter]), line_str, (255, 100, 100), font = font)
+    else:
+        # --- Several lines required ---
+        for level in pwad['level_list']:
+            # >> Beginning of line
+            if level_counter % LEVELS_PER_LINE == 0:
+                line_list = []
+                line_list.append(level)
+            # >> End of line
+            elif level_counter % LEVELS_PER_LINE == (LEVELS_PER_LINE - 1):
+                line_list.append(level)
+                line_str = ' '.join(line_list)
+                draw.text((XMARGIN, YMARGIN + T_LINES_Y[text_line_counter]), line_str, (255, 100, 100), font = font)
+                text_line_counter += 1
+            else:
+                line_list.append(level)
+            level_counter += 1
 
     img.save(filename)
 
