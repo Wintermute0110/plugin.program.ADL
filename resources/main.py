@@ -107,9 +107,12 @@ class Main:
         command = args['command'][0]
         if command == 'BROWSE_FS':
             self._command_browse_fs(args['dir'][0])
+        elif command == 'VIEW':
+            if 'iwad' in args:   self._command_view('iwad', args['iwad'][0])
+            elif 'pwad' in args: self._command_view('pwad', args['pwad'][0])
+            else:                kodi_dialog_OK('Unknown VIEW mode')
         elif command == 'SETUP_PLUGIN':
             self._command_setup_plugin() 
-
         elif command == 'LAUNCH_IWAD':
             self._run_iwad(args['iwad'][0])
         elif command == 'LAUNCH_PWAD':
@@ -226,7 +229,7 @@ class Main:
 
         # --- Create context menu ---
         commands = []
-        URL_view = self._misc_url_1_arg_RunPlugin('command', 'VIEW')
+        URL_view = self._misc_url_2_arg_RunPlugin('command', 'VIEW', 'iwad', wad['filename'])
         commands.append(('View', URL_view ))
         commands.append(('Kodi File Manager', 'ActivateWindow(filemanager)' ))
         commands.append(('Add-on Settings', 'Addon.OpenSettings({0})'.format(__addon_id__) ))
@@ -250,7 +253,7 @@ class Main:
 
         # --- Create context menu ---
         commands = []
-        URL_view = self._misc_url_1_arg_RunPlugin('command', 'VIEW')
+        URL_view = self._misc_url_2_arg_RunPlugin('command', 'VIEW', 'pwad', wad['filename'])
         commands.append(('View', URL_view ))
         commands.append(('Kodi File Manager', 'ActivateWindow(filemanager)' ))
         commands.append(('Add-on Settings', 'Addon.OpenSettings({0})'.format(__addon_id__) ))
@@ -285,8 +288,102 @@ class Main:
     # ---------------------------------------------------------------------------------------------
     # Information display
     # ---------------------------------------------------------------------------------------------
-    def _command_view(self, machine_name, SL_name, SL_ROM, location):
-        pass
+    def _command_view(self, wad_name, wad_filename):
+        log_debug('_command_view() wad_name {0}'.format(wad_name))
+        log_debug('_command_view() wad_filename "{0}"'.format(wad_filename))
+
+        # >> Build menu base on view_type
+        if DOOM_OUTPUT_FILE_PATH.exists():
+            stat_stdout = DOOM_OUTPUT_FILE_PATH.stat()
+            size_stdout = stat_stdout.st_size
+            STD_status = '{0} bytes'.format(size_stdout)
+        else:
+            STD_status = 'not found'
+        if wad_name == 'iwad':
+            d_list = ['View IWAD database entry',
+                      'View last execution output ({0})'.format(STD_status)]
+
+        elif wad_name == 'pwad':
+            d_list = ['View PWAD database entry',
+                      'View last execution output ({0})'.format(STD_status),
+                      'View WAD TXT file']
+
+        dialog = xbmcgui.Dialog()
+        selected_value = dialog.select('View', d_list)
+        if selected_value < 0: return
+
+        if selected_value == 0:
+            if wad_name == 'iwad':
+                window_title = 'IWAD database data'
+                info_text  = '[COLOR orange]IWAD information[/COLOR]\n'
+                info_text += self._misc_print_string_IWAD(wad_filename)
+            elif wad_name == 'pwad':
+                window_title = 'PWAD database data'
+                info_text  = '[COLOR orange]PWAD information[/COLOR]\n'
+                info_text += self._misc_print_string_PWAD(wad_filename)
+
+            # --- Show information window ---
+            # textviewer WINDOW_DIALOG_TEXT_VIEWER 10147 DialogTextViewer.xml
+            try:
+                xbmc.executebuiltin('ActivateWindow(textviewer)')
+                window = xbmcgui.Window(10147)
+                window.setProperty('FontWidth', 'monospaced')
+                xbmc.sleep(100)
+                window.getControl(1).setLabel(window_title)
+                window.getControl(5).setText(info_text)
+            except:
+                log_error('_command_view() Exception rendering INFO window')
+
+        # --- View last execution output ---
+        # NOTE NOT available on Windows. See comments in _run_process()
+        elif selected_value == 1:
+            # --- Ckeck for errors and read file ---
+            if sys.platform == 'win32':
+                kodi_dialog_OK('This feature is not available on Windows.')
+                return
+            if not DOOM_OUTPUT_FILE_PATH.exists():
+                kodi_dialog_OK('Log file not found. Try to run the emulator/application.')
+                return
+            info_text = ''
+            with open(DOOM_OUTPUT_FILE_PATH.getPath(), 'r') as myfile:
+                info_text = myfile.read()
+
+            # --- Show information window ---
+            window_title = 'DOOM last execution stdout'
+            try:
+                xbmc.executebuiltin('ActivateWindow(textviewer)')
+                window = xbmcgui.Window(10147)
+                xbmc.sleep(100)
+                window.getControl(1).setLabel(window_title)
+                window.getControl(5).setText(info_text)
+            except:
+                log_error('_command_view() Exception rendering INFO window')
+
+        # --- View PWAD TXT info file ---
+        elif selected_value == 2:
+            kodi_dialog_OK('View of PWAD TXT not coded yet. Sorry.')
+
+    def _misc_print_string_IWAD(self, wad_filename):
+        iwads = fs_load_JSON_file(IWADS_FILE_PATH.getPath())
+    
+    def _misc_print_string_PWAD(self, wad_filename):
+        # >> Windows workaround
+        if sys.platform == 'win32': wad_filename = wad_filename.replace('/', '\\')
+        pwads = fs_load_JSON_file(PWADS_FILE_PATH.getPath())
+        pwad = pwads[wad_filename]
+
+        info_text  = ''
+        info_text += "[COLOR violet]dir[/COLOR]: '{0}'\n".format(pwad['dir'])
+        info_text += "[COLOR violet]engine[/COLOR]: '{0}'\n".format(pwad['engine'])
+        info_text += "[COLOR violet]fanart[/COLOR]: '{0}'\n".format(pwad['fanart'])
+        info_text += "[COLOR violet]filename[/COLOR]: '{0}'\n".format(pwad['filename'])
+        info_text += "[COLOR violet]iwad[/COLOR]: '{0}'\n".format(pwad['iwad'])
+        info_text += "[COLOR skyblue]level_list[/COLOR]: '{0}'\n".format(pwad['level_list'])
+        info_text += "[COLOR violet]name[/COLOR]: '{0}'\n".format(pwad['name'])
+        info_text += "[COLOR violet]num_levels[/COLOR]: '{0}'\n".format(pwad['num_levels'])
+        info_text += "[COLOR violet]poster[/COLOR]: '{0}'\n".format(pwad['poster'])
+
+        return info_text
 
     # ---------------------------------------------------------------------------------------------
     # Setup plugin databases
