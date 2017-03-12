@@ -223,9 +223,9 @@ class Main:
         fanart_path = wad['fanart'] if 'fanart' in wad else ''
 
         ICON_OVERLAY = 6
-        listitem = xbmcgui.ListItem(title_str, iconImage = icon)
+        listitem = xbmcgui.ListItem(title_str)
         listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
-        if fanart_path: listitem.setArt({'fanart' : fanart_path})
+        if fanart_path: listitem.setArt({'icon' : icon, 'fanart' : fanart_path})
 
         # --- Create context menu ---
         commands = []
@@ -243,13 +243,15 @@ class Main:
         # --- Create listitem row ---
         icon = 'DefaultProgram.png'
         title_str = wad['name']
-        fanart_path = wad['fanart'] if 'fanart' in wad else ''
-        poster_path = wad['poster'] if 'poster' in wad else ''
+        fanart_path = wad['fanart']
+        poster_path = wad['poster']
+        # log_debug('fanart_path {0}'.format(fanart_path))
+        # log_debug('poster_path {0}'.format(poster_path))
 
         ICON_OVERLAY = 6
-        listitem = xbmcgui.ListItem(title_str, iconImage = icon)
+        listitem = xbmcgui.ListItem(title_str)
         listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
-        listitem.setArt({'poster' : poster_path, 'fanart' : fanart_path})
+        listitem.setArt({'icon' : icon, 'poster' : poster_path, 'fanart' : fanart_path})
 
         # --- Create context menu ---
         commands = []
@@ -266,12 +268,11 @@ class Main:
     def _render_directory_row(self, directory):
         icon = 'DefaultFolder.png'
         title_str = directory[1:] if directory[0] == '/' else directory
-        fanart_path = ''
 
         ICON_OVERLAY = 6
-        listitem = xbmcgui.ListItem(title_str, iconImage = icon)
+        listitem = xbmcgui.ListItem(title_str)
         listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
-        if fanart_path: listitem.setArt({'fanart' : fanart_path})
+        listitem.setArt({'icon' : icon})
 
         # --- Create context menu ---
         commands = []
