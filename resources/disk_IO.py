@@ -20,7 +20,11 @@ import io
 import codecs, time
 import subprocess
 import re
-from PIL import Image, ImageDraw
+try:
+    from PIL import Image, ImageDraw
+    PILLOW_AVAILABLE = True
+except:
+    PILLOW_AVAILABLE = False
 
 # --- XML stuff ---
 # ~~~ cElementTree sometimes fails to parse XML in Kodi's Python interpreter... I don't know why
@@ -160,7 +164,7 @@ def fs_scan_iwads(root_file_list):
 
     return iwads
 
-def fs_scan_pwads(doom_wad_dir, pwad_file_list):
+def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
     log_debug('Starting fs_scan_pwads() ...')
     log_debug('Starting fs_scan_pwads() doom_wad_dir = "{0}"'.format(doom_wad_dir))
     pwads = {}
@@ -169,8 +173,8 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list):
         extension = file_str[-3:]
         # >> Check if file is a WAD file
         if extension.lower().endswith('wad'):
-            log_debug('Processing PWAD "{0}"'.format(file.getPath()))
-            
+            log_debug('>>>>>>>>>> Processing PWAD "{0}"'.format(file.getPath()))
+
             # >> Get metadata for this PWAD
             inwad = WAD()
             inwad.from_file(file.getPath())
@@ -178,7 +182,7 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list):
             for i, name in enumerate(inwad.maps): level_name_list.append(name)
             # List is sorted in place
             level_name_list.sort()
-            log_debug('  Number of levels {0}'.format(inwad.maps._n))
+            log_debug('Number of levels {0}'.format(inwad.maps._n))
 
             # >> Create PWAD database dictionary entry
             pwad_dir = file.getDir()
@@ -186,27 +190,35 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list):
             pwad = fs_new_PWAD_asset()
             pwad['dir']        = wad_dir
             pwad['filename']   = file.getPath()
+            pwad['name']       = file.getBase_noext()
             pwad['num_levels'] = inwad.maps._n
             pwad['level_list'] = level_name_list
-            pwad['name']       = file.getBase_noext()
+            pwad['iwad']       = doom_determine_iwad(pwad)
+            pwad['engine']     = doom_determine_engine(pwad)
             if inwad.maps._n > 0:
                 # >> Create WAD info file. If NFO file exists just update automatic fields.
                 nfo_FN = FileName(file.getPath_noext() + '.nfo')
-                log_debug('  Creating NFO file {0}'.format(nfo_FN.getPath()))
+                log_debug('Creating NFO file "{0}"'.format(nfo_FN.getPath()))
                 fs_write_PWAD_NFO_file(nfo_FN, pwad)
 
                 # >> Create fanart with the first level
                 map_name = level_name_list[0]
                 fanart_FN = FileName(file.getPath_noext() + '_' + map_name + '.png')
-                log_debug('  Creating fanart {0}'.format(fanart_FN.getPath()))
+                log_debug('Creating FANART "{0}"'.format(fanart_FN.getPath()))
                 drawmap(inwad, map_name, fanart_FN.getPath(), 1920, 'PNG')
                 pwad['fanart'] = fanart_FN.getPath()
 
+                # >> Create poster with level information
+                poster_FN = FileName(file.getPath_noext() + '_poster.png')
+                log_debug('Creating POSTER "{0}"'.format(poster_FN.getPath()))
+                drawposter(pwad, poster_FN.getPath(), FONT_FILE_PATH)
+                pwad['poster'] = poster_FN.getPath()
+
                 # >> Add PWAD to database. Only add the PWAD if it contains level.
-                log_debug('  Adding PWAD to database')
+                log_debug('Adding PWAD to database')
                 pwads[pwad['filename']] = pwad
             else:
-                log_debug('  Skipping PWAD. Does not have levels')
+                log_debug('Skipping PWAD. Does not have levels')
 
     return pwads
 
@@ -246,21 +258,49 @@ def fs_build_pwad_index_dic(doom_wad_dir, pwads):
     return pwad_index_dic
 
 # -------------------------------------------------------------------------------------------------
-# Globals
+# Functions
 # -------------------------------------------------------------------------------------------------
+#
+# Determintes the IWAD required to run this PWAD
+# Returns: Doom 1, Doom 2, UDoom, Hexen, ...
+#
+IWAD_DOOM1_STR = 'Doom 1'
+IWAD_DOOM2_STR = 'Doom 2'
+def doom_determine_iwad(pwad):
+    level_list = pwad['level_list']
+    iwad_str = IWAD_DOOM1_STR
+    for level_name in level_list:
+        if re.match('E[0-9]M[0-9]', level_name):
+            iwad_str = IWAD_DOOM1_STR
+            break
+        elif re.match('MAP[0-9][0-9]', level_name):
+            iwad_str = IWAD_DOOM2_STR
+            break
+
+    return iwad_str
+
+#
+# Determintes the engine required to run this PWAD
+# Returns: Vanilla, NoLimits, Boom, ZDoom, ...
+#
+def doom_determine_engine(pwad):
+    return 'Vanilla'
+
+
 border = 25
 scales = 0
 total = 0
-
-# -------------------------------------------------------------------------------------------------
-# Functions
-# -------------------------------------------------------------------------------------------------
 def drawmap(wad, name, filename, width, format):
+    log_debug('drawmap() Drawing map "{0}"'.format(filename))
+    if not PILLOW_AVAILABLE:
+        log_debug('drawmap() Pillow not available. Returning...')
+        return
+
     global scales, total
     maxpixels = width
     reqscale = 0
     edit = MapEditor(wad.maps[name])
-    
+
    # determine scale = map area unit / pixel
     xmin = min([v.x for v in edit.vertexes])
     xmax = max([v.x for v in edit.vertexes])
@@ -269,6 +309,8 @@ def drawmap(wad, name, filename, width, format):
     xsize = xmax - xmin
     ysize = ymax - ymin
     scale = (maxpixels-border*2) / float(max(xsize, ysize))
+    log_debug('drawmap() Bounding box xmin {0} | xmax {1}'.format(xmin, xmax))
+    log_debug('drawmap()              ymin {0} | ymax {1}'.format(ymin, ymax))
 
     # tally for average scale or compare against requested scale
     if reqscale == 0:
@@ -321,22 +363,108 @@ def drawmap(wad, name, filename, width, format):
     del draw
     im.save(filename, format)
 
+def drawposter(pwad, filename, FONT_FILE_PATH):
+    log_debug('drawposter() Drawing poster "{0}"'.format(filename))
+    if not PILLOW_AVAILABLE:
+        log_debug('drawposter() Pillow not available. Returning...')
+        return
+
+    # --- CONSTANTS ---
+    font_filename = FONT_FILE_PATH.getPath()
+    FONTSIZE  = 40
+    LINESPACE = 55
+    XMARGIN   = 40
+    YMARGIN   = 25
+    T_LINES_Y = [x * LINESPACE for x in range(0, 50)]
+
+    img = Image.new('RGB', (1000, 1200), (0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.truetype(font_filename, FONTSIZE)
+
+    # --- Draw text ---
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[0]), 'ENGINE: DOOM 1', (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[2]), 'NUMBER of LEVELS: 32', (255, 100, 100), font = font)
+
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[4]), 'LEVELS:', (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[5]), 'E1M1 E1M2 E1M3 E1M4', (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[6]), 'MAP01 MAP02 MAP03 MAP04', (255, 100, 100), font = font)
+
+    img.save(filename)
+
 # -------------------------------------------------------------------------------------------------
 # NFO files
 # -------------------------------------------------------------------------------------------------
+# How to deal with ZDoom custom names? Z1M1, etc.
+#
+# Doom levels:
+#  str_0 = E1Mx
+#  str_1 = E2Mx
+#  str_2 = E3Mx
+#  str_3 = E4Mx
+#
+# Doom 2 levels
+#  str_0 = MAP0X
+#  str_1 = MAP1X
+#  str_2 = MAP2X
+#  str_3 = MAP3X
+#
+DOOM_STR_LIST = [
+    ['E1M1', 'E1M2', 'E1M3', 'E1M4', 'E1M5', 'E1M6', 'E1M7', 'E1M8', 'E1M9'],
+    ['E2M1', 'E2M2', 'E2M3', 'E2M4', 'E2M5', 'E2M6', 'E2M7', 'E2M8', 'E2M9'],
+    ['E3M1', 'E3M2', 'E3M3', 'E3M4', 'E3M5', 'E3M6', 'E3M7', 'E3M8', 'E3M9'],
+    ['E4M1', 'E4M2', 'E4M3', 'E4M4', 'E4M5', 'E4M6', 'E4M7', 'E4M8', 'E4M9']
+]
+
+DOOM2_STR_LIST = [
+    ['MAP01', 'MAP02', 'MAP03', 'MAP04', 'MAP05', 'MAP06', 'MAP07', 'MAP08', 'MAP09', 'MAP10'],
+    ['MAP11', 'MAP12', 'MAP13', 'MAP14', 'MAP15', 'MAP16', 'MAP17', 'MAP18', 'MAP19', 'MAP20'],
+    ['MAP21', 'MAP22', 'MAP23', 'MAP24', 'MAP25', 'MAP26', 'MAP27', 'MAP28', 'MAP29', 'MAP30'],
+    ['MAP31', 'MAP32']
+]
+
+def doom_format_NFO_level_names(line_number, pwad):
+    level_list = pwad['level_list']
+    iwad_str = pwad['iwad']
+    line_list = []
+    if   iwad_str == IWAD_DOOM1_STR: STR_LIST = DOOM_STR_LIST
+    elif iwad_str == IWAD_DOOM2_STR: STR_LIST = DOOM2_STR_LIST
+    else:
+        return 'Unrecognize IWAD {0}'.format(iwad_str)
+
+    for level in level_list:
+        # log_debug('doom_format_NFO_level_names() level {0}'.format(level))
+        # log_debug('doom_format_NFO_level_names() DOOM_STR_LIST[line_number] {0}'.format(STR_LIST[line_number]))
+        if level in STR_LIST[line_number]:
+            line_list.append(level)
+    if line_list: line_str = ', '.join(line_list)
+    else:         line_str = ''
+    
+    return line_str
+
 #
 #
 #
 def fs_write_PWAD_NFO_file(nfo_FN, pwad):
     nfo_file_path = nfo_FN.getPath_noext() + '.nfo'
     log_debug('fs_write_PWAD_NFO_file() Exporting "{0}"'.format(nfo_file_path))
+    level_str_0 = doom_format_NFO_level_names(0, pwad)
+    level_str_1 = doom_format_NFO_level_names(1, pwad)
+    level_str_2 = doom_format_NFO_level_names(2, pwad)
+    level_str_3 = doom_format_NFO_level_names(3, pwad)
 
-    # Always overwrite NFO files.
+    # >> Always overwrite NFO files (for now ...)
+    # log_debug(unicode(pwad))
     nfo_content = []
     nfo_content.append('<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n')
     nfo_content.append('<PWAD>\n')
-    nfo_content.append(XML_text('num_levels', unicode(pwad['num_levels'])))
-    nfo_content.append(XML_text('level_list', unicode(pwad['level_list'])))
+    # nfo_content.append(XML_text('ADL_file', unicode(pwad['iwad'])))
+    nfo_content.append(XML_text('ADL_iwad', unicode(pwad['iwad'])))
+    nfo_content.append(XML_text('ADL_engine', unicode(pwad['engine'])))
+    nfo_content.append(XML_text('ADL_num_levels', unicode(pwad['num_levels'])))
+    if level_str_0: nfo_content.append(XML_text('ADL_map', level_str_0))
+    if level_str_1: nfo_content.append(XML_text('ADL_map', level_str_1))
+    if level_str_2: nfo_content.append(XML_text('ADL_map', level_str_2))
+    if level_str_3: nfo_content.append(XML_text('ADL_map', level_str_3))
     nfo_content.append('</PWAD>\n')
     full_string = ''.join(nfo_content).encode('utf-8')
     try:
@@ -389,3 +517,7 @@ def fs_import_PWAD_NFO(roms, romID, verbose = True):
         return False
 
     return True
+
+# -------------------------------------------------------------------------------------------------
+# Doom utility functions
+# -------------------------------------------------------------------------------------------------

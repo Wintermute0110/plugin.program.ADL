@@ -2,6 +2,7 @@
 <settings>
 <category label="Paths">
     <!-- <setting id="separator" type="lsep" label="Scan settings"/> -->
+    <setting label="DOOM executable" type="file"   id="doom_prog" />
     <setting label="Doom WADs directory" type="folder" id="doom_wad_dir" default="" source="" />
 </category>
 <category label="Display">

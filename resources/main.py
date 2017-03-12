@@ -60,6 +60,7 @@ LAUNCH_LOG_FILE_PATH    = PLUGIN_DATA_DIR.pjoin('launcher.log')
 RECENT_PLAYED_FILE_PATH = PLUGIN_DATA_DIR.pjoin('history.json')
 MOST_PLAYED_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('most_played.json')
 DOOM_OUTPUT_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('doom_output.log')
+FONT_FILE_PATH          = CURRENT_ADDON_DIR.pjoin('fonts/DooM.ttf')
 
 # --- Main code -----------------------------------------------------------------------------------
 class Main:
@@ -127,6 +128,7 @@ class Main:
         self.settings = {}
 
         # --- Paths ---
+        self.settings['doom_prog']               = __addon_obj__.getSetting('doom_prog').decode('utf-8')
         self.settings['doom_wad_dir']            = __addon_obj__.getSetting('doom_wad_dir').decode('utf-8')
 
         # --- Display ---
@@ -239,11 +241,12 @@ class Main:
         icon = 'DefaultProgram.png'
         title_str = wad['name']
         fanart_path = wad['fanart'] if 'fanart' in wad else ''
+        poster_path = wad['poster'] if 'poster' in wad else ''
 
         ICON_OVERLAY = 6
         listitem = xbmcgui.ListItem(title_str, iconImage = icon)
         listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
-        if fanart_path: listitem.setArt({'fanart' : fanart_path})
+        listitem.setArt({'poster' : poster_path, 'fanart' : fanart_path})
 
         # --- Create context menu ---
         commands = []
@@ -326,7 +329,7 @@ class Main:
 
             # >> Now scan for actual IWADs/PWADs
             iwads = fs_scan_iwads(root_file_list)
-            pwads = fs_scan_pwads(doom_wad_dir, pwad_file_list)
+            pwads = fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH)
             pwad_index_dic = fs_build_pwad_index_dic(doom_wad_dir, pwads)
             # log_info(pprint.pprint(iwads))
             # log_info(pprint.pprint(pwads))
