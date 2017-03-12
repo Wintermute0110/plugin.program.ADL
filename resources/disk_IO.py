@@ -286,10 +286,7 @@ def doom_determine_iwad(pwad):
 def doom_determine_engine(pwad):
     return 'Vanilla'
 
-
-border = 25
-scales = 0
-total = 0
+BORDER_PIXELS = 25
 def drawmap(wad, name, filename, width, format):
     log_debug('drawmap() Drawing map "{0}"'.format(filename))
     if not PILLOW_AVAILABLE:
@@ -298,7 +295,6 @@ def drawmap(wad, name, filename, width, format):
 
     global scales, total
     maxpixels = width
-    reqscale = 0
     edit = MapEditor(wad.maps[name])
 
    # determine scale = map area unit / pixel
@@ -308,23 +304,17 @@ def drawmap(wad, name, filename, width, format):
     ymax = max([-v.y for v in edit.vertexes])
     xsize = xmax - xmin
     ysize = ymax - ymin
-    scale = (maxpixels-border*2) / float(max(xsize, ysize))
+    scale = (maxpixels-BORDER_PIXELS*2) / float(max(xsize, ysize))
     log_debug('drawmap() Bounding box xmin {0} | xmax {1}'.format(xmin, xmax))
     log_debug('drawmap()              ymin {0} | ymax {1}'.format(ymin, ymax))
-
-    # tally for average scale or compare against requested scale
-    if reqscale == 0:
-        scales = scales + scale
-        total = total + 1
-    else:
-        if scale > 1.0 / reqscale:
-            scale = 1.0 / reqscale
 
     # convert all numbers to image space
     xmax = int(xmax*scale); xmin = int(xmin*scale)
     ymax = int(ymax*scale); ymin = int(ymin*scale)
-    xsize = int(xsize*scale) + border*2;
-    ysize = int(ysize*scale) + border*2;
+    xsize = int(xsize*scale) + BORDER_PIXELS*2;
+    ysize = int(ysize*scale) + BORDER_PIXELS*2;
+    log_debug('drawmap() xsize {0}'.format(xsize))
+    log_debug('drawmap() ysize {0}'.format(ysize))
     for v in edit.vertexes: 
         v.x =  v.x * scale
         v.y = -v.y * scale 
@@ -336,10 +326,10 @@ def drawmap(wad, name, filename, width, format):
     edit.linedefs.sort(lambda a, b: cmp(not a.two_sided, not b.two_sided))
 
     for line in edit.linedefs:
-         p1x = edit.vertexes[line.vx_a].x - xmin + border
-         p1y = edit.vertexes[line.vx_a].y - ymin + border
-         p2x = edit.vertexes[line.vx_b].x - xmin + border
-         p2y = edit.vertexes[line.vx_b].y - ymin + border
+         p1x = edit.vertexes[line.vx_a].x - xmin + BORDER_PIXELS
+         p1y = edit.vertexes[line.vx_a].y - ymin + BORDER_PIXELS
+         p2x = edit.vertexes[line.vx_b].x - xmin + BORDER_PIXELS
+         p2y = edit.vertexes[line.vx_b].y - ymin + BORDER_PIXELS
          color = (0, 0, 0)
          if line.two_sided: color = (144, 144, 144)
          if line.action:    color = (220, 130, 50)
@@ -372,7 +362,7 @@ def drawposter(pwad, filename, FONT_FILE_PATH):
     # --- CONSTANTS ---
     font_filename = FONT_FILE_PATH.getPath()
     FONTSIZE  = 40
-    LINESPACE = 55
+    LINESPACE = 65
     XMARGIN   = 40
     YMARGIN   = 25
     T_LINES_Y = [x * LINESPACE for x in range(0, 50)]
