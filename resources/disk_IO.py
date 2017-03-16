@@ -205,7 +205,7 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
                 map_name = level_name_list[0]
                 fanart_FN = FileName(file.getPath_noext() + '_' + map_name + '.png')
                 log_debug('Creating FANART "{0}"'.format(fanart_FN.getPath()))
-                drawmap(inwad, map_name, fanart_FN.getPath(), 1920, 'PNG')
+                drawmap(inwad, map_name, fanart_FN.getPath(), 'PNG', 1920, 1080)
                 pwad['fanart'] = fanart_FN.getPath()
 
                 # >> Create poster with level information
@@ -287,67 +287,64 @@ def doom_determine_engine(pwad):
     return 'Vanilla'
 
 BORDER_PIXELS = 25
-def drawmap(wad, name, filename, width, format):
+def drawmap(wad, name, filename, format, pxsize, pysize):
     log_debug('drawmap() Drawing map "{0}"'.format(filename))
     if not PILLOW_AVAILABLE:
         log_debug('drawmap() Pillow not available. Returning...')
         return
 
-    global scales, total
-    maxpixels = width
+    # Load map in editor
     edit = MapEditor(wad.maps[name])
 
-   # determine scale = map area unit / pixel
+    # Determine scale = map area unit / pixel
     xmin = min([v.x for v in edit.vertexes])
     xmax = max([v.x for v in edit.vertexes])
     ymin = min([-v.y for v in edit.vertexes])
     ymax = max([-v.y for v in edit.vertexes])
     xsize = xmax - xmin
     ysize = ymax - ymin
-    scale = (maxpixels-BORDER_PIXELS*2) / float(max(xsize, ysize))
-    log_debug('drawmap() Bounding box xmin {0} | xmax {1}'.format(xmin, xmax))
-    log_debug('drawmap()              ymin {0} | ymax {1}'.format(ymin, ymax))
-
-    # convert all numbers to image space
-    xmax = int(xmax*scale); xmin = int(xmin*scale)
-    ymax = int(ymax*scale); ymin = int(ymin*scale)
-    xsize = int(xsize*scale) + BORDER_PIXELS*2;
-    ysize = int(ysize*scale) + BORDER_PIXELS*2;
-    log_debug('drawmap() xsize {0}'.format(xsize))
-    log_debug('drawmap() ysize {0}'.format(ysize))
-    for v in edit.vertexes: 
-        v.x =  v.x * scale
-        v.y = -v.y * scale 
+    scale_x = (pxsize-BORDER_PIXELS*2) / float(xsize)
+    scale_y = (pysize-BORDER_PIXELS*2) / float(ysize)
+    if scale_x < scale_y:
+        scale = scale_x
+        xoffset = 0
+        yoffset = (pysize - int(ysize*scale)) / 2
+    else:
+        scale = scale_y
+        xoffset = (pxsize - int(xsize*scale)) / 2
+        yoffset = 0
 
     # --- Create image ---
-    im = Image.new('RGB', (xsize, ysize), (255,255,255))
+    im = Image.new('RGB', (pxsize, pysize), (255, 255, 255))
     draw = ImageDraw.Draw(im)
 
+    # --- Draw lines ---
     edit.linedefs.sort(lambda a, b: cmp(not a.two_sided, not b.two_sided))
-
     for line in edit.linedefs:
-         p1x = edit.vertexes[line.vx_a].x - xmin + BORDER_PIXELS
-         p1y = edit.vertexes[line.vx_a].y - ymin + BORDER_PIXELS
-         p2x = edit.vertexes[line.vx_b].x - xmin + BORDER_PIXELS
-         p2y = edit.vertexes[line.vx_b].y - ymin + BORDER_PIXELS
-         color = (0, 0, 0)
-         if line.two_sided: color = (144, 144, 144)
-         if line.action:    color = (220, 130, 50)
+        # >> Flip coordinates of Y axis
+        p1x =  ( edit.vertexes[line.vx_a].x - xmin) * scale + BORDER_PIXELS + xoffset
+        p1y =  (-edit.vertexes[line.vx_a].y - ymin) * scale + BORDER_PIXELS + yoffset
+        p2x =  ( edit.vertexes[line.vx_b].x - xmin) * scale + BORDER_PIXELS + xoffset
+        p2y =  (-edit.vertexes[line.vx_b].y - ymin) * scale + BORDER_PIXELS + yoffset
+        color = (0, 0, 0)
+        if   line.two_sided: color = (144, 144, 144)
+        elif line.action:    color = (220, 130, 50)
 
-         # draw several lines to simulate thickness 
-         draw.line((p1x, p1y, p2x, p2y), fill=color)
-         draw.line((p1x+1, p1y, p2x+1, p2y), fill=color)
-         draw.line((p1x-1, p1y, p2x-1, p2y), fill=color)
-         draw.line((p1x, p1y+1, p2x, p2y+1), fill=color)
-         draw.line((p1x, p1y-1, p2x, p2y-1), fill=color)
+        # >> Draw several lines to simulate thickness 
+        draw.line((p1x, p1y, p2x, p2y), fill = color)
+        draw.line((p1x+1, p1y, p2x+1, p2y), fill = color)
+        draw.line((p1x-1, p1y, p2x-1, p2y), fill = color)
+        draw.line((p1x, p1y+1, p2x, p2y+1), fill = color)
+        draw.line((p1x, p1y-1, p2x, p2y-1), fill = color)
 
-    # --- Draw scale (or grid or XY axis) ---
-    # scale_size = 654 * scale
-    # draw.line((10, 10, 10 + scale_size, 10), fill=(255, 255, 0))
-
-    # --- Draw XY axis ---
-    # scale_size = 654 * scale
-    # draw.line((10, 10, 10 + scale_size, 10), fill=(255, 0, 0))
+    # --- Draw things ---
+    RADIUS = 4
+    for thing in edit.things:
+        # >> Flip coordinates of Y axis
+        p1x =  ( thing.x - xmin) * scale + BORDER_PIXELS + xoffset
+        p1y =  (-thing.y - ymin) * scale + BORDER_PIXELS + yoffset
+        color = (0, 255, 0)
+        draw.ellipse((p1x-RADIUS, p1y-RADIUS, p1x+RADIUS, p1y+RADIUS), outline = color)
 
     # --- Save image file ---
     del draw
