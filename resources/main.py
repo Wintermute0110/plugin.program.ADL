@@ -35,8 +35,8 @@ __addon_type__    = __addon_obj__.getAddonInfo('type').decode('utf-8')
 # >> WORKAROUND!
 # >> In order for omg to work well "PLUGIN_DIR/resources" must be in the Python path.
 # >> Another solution is to put omg module in PLUGIN_DIR which is automatically in the path.
-addon_resources_dir_u = 'special://home/addons/{0}/resources'.format(__addon_id__)
-sys.path.insert(0, xbmc.translatePath(addon_resources_dir_u))
+# addon_resources_dir_u = 'special://home/addons/{0}/resources'.format(__addon_id__)
+# sys.path.insert(0, xbmc.translatePath(addon_resources_dir_u))
 
 # --- Modules/packages in this plugin ---
 from disk_IO import *
