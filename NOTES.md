@@ -94,3 +94,35 @@ Directory | [Multilevel WADs ... ]
 > Pillow is fully backward compatible* with PIL, so this change should not cause any issues in your addon.
 
 See http://forum.kodi.tv/showthread.php?tid=250936&pid=2179879#pid2179879
+
+## Mediacenter friendly DOOM source ports ##
+
+### Chocolate DOOM ###
+
+#### Advantages and Disadvantages ####
+
+ * Packaged in Debian and Ubuntu.
+
+ * Configuration file stored in `~/.local/share/chocolate-doom/default.cfg` 
+   and `~/.local/share/chocolate-doom/chocolate-doom.cfg`
+
+ * Menu can be accesed with the joystick.
+
+#### Compiling ####
+
+ 1) Dependencies in Debian: `autoconf`, `libsdl2-mixer-dev`, `libsdl2-net-dev`
+ 2) Run `autoreconf -fi` and then `./configure`
+ 3) Compile with `make`
+ 4) Executables are in `src/chocolate-doom` and `src/chocolate-doom-setup`
+
+#### Configuration of the joystick ####
+
+ 1) Run `chocolate-doom-setup`
+
+ 2) ...
+
+### PrBoom+ ###
+
+#### Advantages and Disadvantages ####
+
+ * Packaged in Debian and Ubuntu.
