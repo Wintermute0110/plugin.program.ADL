@@ -480,17 +480,41 @@ class Main:
     # Launch IWAD
     # ---------------------------------------------------------------------------------------------
     def _run_iwad(self, filename):
-        log_info('_run_iwad() Launching PWAD "{0}"'.format(filename))
-
-        # >> Get paths
-        doom_exe_path = self.settings['doom_prog']
-        doom_prog_FN = FileName(doom_exe_path)
+        log_info('_run_iwad() IWAD "{0}"'.format(filename))
 
         # >> Check if ROM exist
         IWAD_FN = FileName(filename)
         if not IWAD_FN.exists():
             kodi_dialog_OK('IWAD does not exist.')
             return
+
+        # >> If user configured multiple DOOM executables show a list
+        doom_exe_FN_list = []
+        doom_exe_name_list = []
+        if PATHS.chocolate_doom_prog.isfile():
+            doom_exe_FN_list.append(PATHS.chocolate_doom_prog)
+            doom_exe_name_list.append(PATHS.chocolate_doom_prog.getBase_noext().capitalize())
+        if PATHS.prboom_plus_prog.isfile():
+            doom_exe_FN_list.append(PATHS.prboom_plus_prog)
+            doom_exe_name_list.append(PATHS.prboom_plus_prog.getBase_noext().capitalize())
+        if PATHS.zdoom_doom_prog.isfile():
+            doom_exe_FN_list.append(PATHS.zdoom_doom_prog)
+            doom_exe_name_list.append(PATHS.zdoom_doom_prog.getBase_noext().capitalize())
+        # >> If not executables warn user and abort
+        if len(doom_exe_name_list) < 1:
+            log_info('_run_iwad() No DOOM executables configured. Aboting.')
+            kodi_dialog_OK('No DOOM exectuable configured. Aborting.')
+            return
+        # >> If only one exectuable there is nothing to choose
+        elif len(doom_exe_name_list) == 1:
+            log_info('_run_iwad() Only 1 DOOM executable configured.')
+            doom_prog_FN = doom_exe_FN_list[0]
+        else:
+            dialog = xbmcgui.Dialog()
+            menu_item = dialog.select('Choose DOOM executable', doom_exe_name_list)
+            if menu_item < 0: return
+            log_info('_run_iwad() User choos DOOM exe index {0}'.format(menu_item))
+            doom_prog_FN = doom_exe_FN_list[menu_item]
 
         # >> Launch machine using subprocess module
         (doom_dir, doom_exec) = os.path.split(doom_prog_FN.getPath())
@@ -535,6 +559,10 @@ class Main:
         self._run_process(arg_list, doom_dir)
 
     def _run_process(self, arg_list, exec_dir):
+        # --- User notification ---
+        if self.settings['display_launcher_notify']:
+            kodi_notify('Launching {0}'.format(arg_list[0]))
+
         # >> Prevent a console window to be shown in Windows. Not working yet!
         if sys.platform == 'win32':
             log_info('_run_process() Platform is win32. Creating _info structure')
@@ -556,9 +584,9 @@ class Main:
             log_info('_run_process() _info is None')
             _info = None
 
-        # >> Launch DOOM
+        # --- Launch DOOM process ---
         log_info('_run_process() Calling subprocess.Popen()...')
-        with open(DOOM_OUTPUT_FILE_PATH.getPath(), 'wb') as f:
+        with open(PATHS.DOOM_OUTPUT_FILE_PATH.getPath(), 'wb') as f:
             p = subprocess.Popen(arg_list, cwd = exec_dir, startupinfo = _info, stdout = f, stderr = subprocess.STDOUT)
         p.wait()
         log_info('_run_process() Exiting function')
