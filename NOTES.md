@@ -126,3 +126,20 @@ See http://forum.kodi.tv/showthread.php?tid=250936&pid=2179879#pid2179879
 #### Advantages and Disadvantages ####
 
  * Packaged in Debian and Ubuntu.
+
+### GZDoom ###
+
+#### Advantages and Disadvantages ####
+
+ * Runs many ZDoom-exclusive WADs.
+
+### Compiling ###
+
+ 1) Clone GZDoom: `git clone https://github.com/coelckers/gzdoom.git`
+    
+ 2) Create build directory: `cd gzdoom; mkdir build`
+ 
+ 3) Generate makefiles: `cd gzdoom/build; cmake -DCMAKE_BUILD_TYPE=Release ..`
+
+ 4) Execute make: `make`
+

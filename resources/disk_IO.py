@@ -221,35 +221,44 @@ def fs_scan_iwads(root_file_list):
         # >> First try to match the IWAD by file size
         stat_obj = os.stat(file.getPath())
         file_size = stat_obj.st_size
+        IWAD_found = False
         for iwad_info in iwad_info_list:
             if file_size == iwad_info[2]:
                 log_info('Found IWAD "{0}" by file size matching'.format(iwad_info[1]))
-                iwad = fs_new_IWAD_object()
-                # In database paths separators are always '/'
-                iwad['filename'] = file.getPath().replace('\\', '/')
-                iwad['iwad']     = iwad_info[0]
-                iwad['name']     = iwad_info[1]
-                iwad['size']     = iwad_info[2]
-                iwads.append(iwad)
-                continue
-
+                IWAD_found = True
+                break
+        if IWAD_found:
+            iwad = fs_new_IWAD_object()
+            # In database paths separators are always '/'
+            iwad['filename'] = file.getPath().replace('\\', '/')
+            iwad['iwad']     = iwad_info[0]
+            iwad['name']     = iwad_info[1]
+            iwad['size']     = iwad_info[2]
+            iwads.append(iwad)
+            continue
+            
         # >> If not found then try to match by filename
         # >> This can produce a lot of wrong matches due to WAD filename alises. However, it should
         # >> work OK for the FreeDoom WADs freedoom1.wad and freedoom2.wad
+        IWAD_found = False
         for iwad_type in iwad_name_dic:
             iwad_fn_list = iwad_name_dic[iwad_type]
             for wad_name in iwad_fn_list:
                 if wad_name == file.getBase():
                     log_info('Found IWAD "{0}" by file name matching'.format(file.getBase()))
-                    iwad = fs_new_IWAD_object()
-                    iwad['filename'] = file.getPath().replace('\\', '/')
-                    iwad['iwad']     = iwad_type
-                    if iwad_type == IWAD_FD_1:   iwad['name'] = 'FreeDoom: Phase 1'
-                    elif iwad_type == IWAD_FD_2: iwad['name'] = 'FreeDoom: Phase 2'
-                    else:                        iwad['name'] = file.getBase()
-                    iwad['size']     = file_size
-                    iwads.append(iwad)
-                    continue
+                    IWAD_found = True
+                    break
+            if IWAD_found: break
+        if IWAD_found:
+            iwad = fs_new_IWAD_object()
+            iwad['filename'] = file.getPath().replace('\\', '/')
+            iwad['iwad']     = iwad_type
+            if iwad_type == IWAD_FD_1:   iwad['name'] = 'FreeDoom: Phase 1'
+            elif iwad_type == IWAD_FD_2: iwad['name'] = 'FreeDoom: Phase 2'
+            else:                        iwad['name'] = file.getBase()
+            iwad['size']     = file_size
+            iwads.append(iwad)
+            continue
 
     return iwads
 
