@@ -278,9 +278,10 @@ def fs_scan_pwads(PATHS, pwad_file_list):
 
             # >> Create PWAD database dictionary entry
             pwad_dir = file.getDir()
-            wad_dir = pwad_dir.replace(PATHS.doom_wad_dir.getPath(), '/')
+            wad_relative_dir_FN = FileName(pwad_dir.replace(PATHS.doom_wad_dir.getPath(), ''))
+            log_debug('Relative dir "{0}"'.format(wad_relative_dir_FN.getPath()))
             pwad = fs_new_PWAD_object()
-            pwad['dir']        = wad_dir
+            pwad['dir']        = wad_relative_dir_FN.getPath()
             pwad['filename']   = file.getPath()
             pwad['name']       = file.getBase_noext()
             pwad['num_levels'] = inwad.maps._n
@@ -293,15 +294,26 @@ def fs_scan_pwads(PATHS, pwad_file_list):
                 log_debug('Creating NFO file "{0}"'.format(nfo_FN.getPath()))
                 fs_write_PWAD_NFO_file(nfo_FN, pwad)
 
+                # >> Artwork path
+                artwork_path_FN = PATHS.artwork_dir.pjoin(wad_relative_dir_FN.getPath())
+                log_debug('artwork_path_FN "{0}"'.format(artwork_path_FN.getPath()))
+                if not artwork_path_FN.isdir():
+                    log_info('Creating artwork dir "{0}"'.format(artwork_path_FN.getPath()))
+                    artwork_path_FN.makedirs()
+
+                # >> Savegame directory.
+                # >> Create a diferent directory for each PWAD. NOT SUPPORTED YET.
+                
+
                 # >> Create fanart with the first level
                 map_name = level_name_list[0]
-                fanart_FN = FileName(file.getPath_noext() + '_' + map_name + '.png')
+                fanart_FN = artwork_path_FN.pjoin(file.getBase_noext() + '_' + map_name + '.png')
                 log_debug('Creating FANART "{0}"'.format(fanart_FN.getPath()))
                 drawmap(inwad, map_name, fanart_FN.getPath(), 'PNG', 1920, 1080)
                 pwad['fanart'] = fanart_FN.getPath()
 
                 # >> Create poster with level information
-                poster_FN = FileName(file.getPath_noext() + '_poster.png')
+                poster_FN = artwork_path_FN.pjoin(file.getBase_noext() + '_poster.png')
                 log_debug('Creating POSTER "{0}"'.format(poster_FN.getPath()))
                 drawposter(pwad, poster_FN.getPath(), PATHS.FONT_FILE_PATH.getPath())
                 pwad['poster'] = poster_FN.getPath()
