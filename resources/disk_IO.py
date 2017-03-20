@@ -56,15 +56,17 @@ IWAD_DOOM_BFG   = 'Doom BFG'
 IWAD_DOOM_2_BFG = 'Doom 2 BFG'
 IWAD_FD_1       = 'FreeDOOM Phase 1'
 IWAD_FD_2       = 'FreeDOOM Phase 2'
+IWAD_UNKNOWN    = 'Unknown'
 IWAD_LIST       = [IWAD_DOOM_SW, IWAD_DOOM, IWAD_DOOM_2, IWAD_UDOOM, IWAD_TNT, IWAD_PLUTONIA,
-                   IWAD_DOOM_BFG, IWAD_DOOM_2_BFG, IWAD_FD_1, IWAD_FD_2]
+                   IWAD_DOOM_BFG, IWAD_DOOM_2_BFG, IWAD_FD_1, IWAD_FD_2, IWAD_UNKNOWN]
 
 # --- DOOM engine types ---
 ENGINE_VANILLA = 'Vanilla'
 ENGINE_NOLIMIT = 'No limit'
 ENGINE_BOOM    = 'BOOM'
 ENGINE_ZDOOM   = 'ZDOOM'
-ENGINE_LIST    = [ENGINE_VANILLA, ENGINE_NOLIMIT, ENGINE_BOOM, ENGINE_ZDOOM]
+ENGINE_UNKNOWN = 'Unknown'
+ENGINE_LIST    = [ENGINE_VANILLA, ENGINE_NOLIMIT, ENGINE_BOOM, ENGINE_ZDOOM, ENGINE_UNKNOWN]
 
 # --- List of IWADs files ---
 # >> https://doomwiki.org/wiki/IWAD
@@ -133,15 +135,20 @@ def fs_new_IWAD_object():
         'filename' : '',
         'name'     : '',
         'size'     : 0,
-        'iwad'     : '', # Game type
+        'iwad'     : IWAD_UNKNOWN
     }
 
     return a
 
-def fs_new_PWAD_asset():
+def fs_new_PWAD_object():
     a = {
-        'dir'       : '',
-        'filename'  : '',
+        'dir'        : '',
+        'filename'   : '',
+        'name'       : '',
+        'num_levels' : 0,
+        'level_list' : [],
+        'iwad'       : IWAD_UNKNOWN,
+        'engine'     : ENGINE_UNKNOWN
     }
 
     return a
@@ -272,7 +279,7 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
             # >> Create PWAD database dictionary entry
             pwad_dir = file.getDir()
             wad_dir = pwad_dir.replace(doom_wad_dir, '/')
-            pwad = fs_new_PWAD_asset()
+            pwad = fs_new_PWAD_object()
             pwad['dir']        = wad_dir
             pwad['filename']   = file.getPath()
             pwad['name']       = file.getBase_noext()
@@ -352,29 +359,27 @@ def fs_build_pwad_index_dic(doom_wad_dir, pwads):
 # -------------------------------------------------------------------------------------------------
 #
 # Determintes the IWAD required to run this PWAD
-# Returns: Doom 1, Doom 2, UDoom, Hexen, ...
+# Returns a string from IWAD_LIST
 #
-IWAD_DOOM1_STR = 'Doom 1'
-IWAD_DOOM2_STR = 'Doom 2'
 def doom_determine_iwad(pwad):
     level_list = pwad['level_list']
-    iwad_str = IWAD_DOOM1_STR
+    iwad_str = IWAD_UNKNOWN
     for level_name in level_list:
         if re.match('E[0-9]M[0-9]', level_name):
-            iwad_str = IWAD_DOOM1_STR
+            iwad_str = IWAD_DOOM
             break
         elif re.match('MAP[0-9][0-9]', level_name):
-            iwad_str = IWAD_DOOM2_STR
+            iwad_str = IWAD_DOOM_2
             break
 
     return iwad_str
 
 #
 # Determintes the engine required to run this PWAD
-# Returns: Vanilla, NoLimits, Boom, ZDoom, ...
+# Returns a string from ENGINE_LIST
 #
 def doom_determine_engine(pwad):
-    return 'Vanilla'
+    return ENGINE_VANILLA
 
 BORDER_PIXELS = 25
 def drawmap(wad, name, filename, format, pxsize, pysize):
@@ -530,8 +535,8 @@ def doom_format_NFO_level_names(line_number, pwad):
     level_list = pwad['level_list']
     iwad_str = pwad['iwad']
     line_list = []
-    if   iwad_str == IWAD_DOOM1_STR: STR_LIST = DOOM_STR_LIST
-    elif iwad_str == IWAD_DOOM2_STR: STR_LIST = DOOM2_STR_LIST
+    if   iwad_str == IWAD_DOOM: STR_LIST = DOOM_STR_LIST
+    elif iwad_str == IWAD_DOOM_2: STR_LIST = DOOM2_STR_LIST
     else:
         return 'Unrecognize IWAD {0}'.format(iwad_str)
 
