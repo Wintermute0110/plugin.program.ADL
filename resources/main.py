@@ -438,6 +438,8 @@ class Main:
             fs_write_JSON_file(PWADS_FILE_PATH.getPath(), pwads)
             fs_write_JSON_file(PWADS_IDX_FILE_PATH.getPath(), pwad_index_dic)
 
+        kodi_refresh_container()
+
     # ---------------------------------------------------------------------------------------------
     # Launch IWAD
     # ---------------------------------------------------------------------------------------------

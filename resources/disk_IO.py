@@ -56,14 +56,15 @@ IWAD_DOOM_BFG   = 'Doom BFG'
 IWAD_DOOM_2_BFG = 'Doom 2 BFG'
 IWAD_FD_1       = 'FreeDOOM Phase 1'
 IWAD_FD_2       = 'FreeDOOM Phase 2'
-IWAD_LIST       = [IWAD_DOOM_1 IWAD_DOOM_2 IWAD_UDOOM]
+IWAD_LIST       = [IWAD_DOOM_SW, IWAD_DOOM, IWAD_DOOM_2, IWAD_UDOOM, IWAD_TNT, IWAD_PLUTONIA,
+                   IWAD_DOOM_BFG, IWAD_DOOM_2_BFG, IWAD_FD_1, IWAD_FD_2]
 
 # --- DOOM engine types ---
 ENGINE_VANILLA = 'Vanilla'
 ENGINE_NOLIMIT = 'No limit'
 ENGINE_BOOM    = 'BOOM'
 ENGINE_ZDOOM   = 'ZDOOM'
-ENGINE_LIST    = [ENGINE_VANILLA ENGINE_NOLIMIT ENGINE_BOOM ENGINE_ZDOOM]
+ENGINE_LIST    = [ENGINE_VANILLA, ENGINE_NOLIMIT, ENGINE_BOOM, ENGINE_ZDOOM]
 
 # --- List of IWADs files ---
 # >> https://doomwiki.org/wiki/IWAD
@@ -114,7 +115,7 @@ iwad_info_list = [
 ]
 
 # { IWAD_IDENTIFIED : [ 'filename1.wad', 'filename2.wad', ...]
-iwad_name_list = {
+iwad_name_dic = {
     IWAD_DOOM_SW     : ['doom1.wad'],
     IWAD_DOOM        : ['doom.wad'],
     IWAD_DOOM_2      : ['doom2.wad'],
@@ -127,13 +128,12 @@ iwad_name_list = {
     IWAD_FD_2        : ['freedoom2.wad'],
 }
 
-# ASSET_MAME_KEY_LIST  = ['cabinet',  'cpanel',  'flyer',  'marquee',  'PCB',  'snap',  'title',  'clearlogo']
-# ASSET_MAME_PATH_LIST = ['cabinets', 'cpanels', 'flyers', 'marquees', 'PCBs', 'snaps', 'titles', 'clearlogos']
-def fs_new_IWAD_asset():
+def fs_new_IWAD_object():
     a = {
         'filename' : '',
         'name'     : '',
         'size'     : 0,
+        'iwad'     : '', # Game type
     }
 
     return a
@@ -208,28 +208,45 @@ def fs_scan_iwads(root_file_list):
     log_debug('Starting fs_scan_iwads() ...')
     iwads = []
     for file in root_file_list:
-        # >> For now just check size of the IWAD. Later check MD5
+        log_debug('Scanning file "{0}"'.format(file.getPath()))
+
+        # >> First try to match the IWAD by file size
         stat_obj = os.stat(file.getPath())
         file_size = stat_obj.st_size
-        IWAD_found = False
-        for iwad_info in iwad_list:
-            if file_size == iwad_info[1]:
-                IWAD_found = True
-                IWAD_info = iwad_info
-                break
-        if IWAD_found: 
-            log_info('Found IWAD {0}'.format(IWAD_info[0]))
-            iwad = fs_new_IWAD_asset()
-            iwad['filename'] = file.getPath()
-            iwad['name']     = IWAD_info[0]
-            iwad['size']     = IWAD_info[1]
-            iwads.append(iwad)
+        for iwad_info in iwad_info_list:
+            if file_size == iwad_info[2]:
+                log_info('Found IWAD "{0}" by file size matching'.format(iwad_info[1]))
+                iwad = fs_new_IWAD_object()
+                iwad['filename'] = file.getPath()
+                iwad['iwad']     = iwad_info[0]
+                iwad['name']     = iwad_info[1]
+                iwad['size']     = iwad_info[2]
+                iwads.append(iwad)
+                continue
+
+        # >> If not found then try to match by filename
+        # >> This can produce a lot of wrong matches due to WAD filename alises. However, it should
+        # >> work OK for the FreeDoom WADs freedoom1.wad and freedoom2.wad
+        for iwad_type in iwad_name_dic:
+            iwad_fn_list = iwad_name_dic[iwad_type]
+            for wad_name in iwad_fn_list:
+                if wad_name == file.getBase():
+                    log_info('Found IWAD "{0}" by file name matching'.format(file.getBase()))
+                    iwad = fs_new_IWAD_object()
+                    iwad['filename'] = file.getPath()
+                    iwad['iwad']     = iwad_type
+                    if iwad_type == IWAD_FD_1:   iwad['name'] = 'FreeDoom: Phase 1'
+                    elif iwad_type == IWAD_FD_2: iwad['name'] = 'FreeDoom: Phase 2'
+                    else:                        iwad['name'] = file.getBase()
+                    iwad['size']     = file_size
+                    iwads.append(iwad)
+                    continue
 
     return iwads
 
 def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
     log_debug('Starting fs_scan_pwads() ...')
-    log_debug('Starting fs_scan_pwads() doom_wad_dir = "{0}"'.format(doom_wad_dir))
+    log_debug('doom_wad_dir = "{0}"'.format(doom_wad_dir))
     pwads = {}
     for file in pwad_file_list:
         file_str = file.getPath()
