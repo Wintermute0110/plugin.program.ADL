@@ -1,9 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
 <category label="Paths">
-    <!-- <setting id="separator" type="lsep" label="Scan settings"/> -->
-    <setting label="DOOM executable" type="file"   id="doom_prog" />
-    <setting label="Doom WADs directory" type="folder" id="doom_wad_dir" default="" source="" />
+    <setting id="separator" type="lsep" label="DOOM executables"/>
+    <setting label="Chocolate DOOM" type="file" id="chocolate_doom_prog" />
+    <setting label="PrBoom+" type="file" id="prboom_plus_prog" />
+    <setting label="ZDoom" type="file" id="zdoom_doom_prog" />
+
+    <setting id="separator" type="lsep" label="Paths"/>
+    <setting label="WAD directory" type="folder" id="doom_wad_dir" default="" source="" />
+    <setting label="Artwork directory" type="folder" id="artwork_dir" default="" source="" />
+    <setting label="Savegame directory" type="folder" id="savegame_dir" default="" source="" />
 </category>
 <category label="Display">
     <setting label="Launching Application notification" type="bool" default="true" id="display_launcher_notify" />
