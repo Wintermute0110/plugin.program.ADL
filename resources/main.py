@@ -401,6 +401,11 @@ class Main:
             doom_wad_dir = self.settings['doom_wad_dir']
             log_info('_command_setup_plugin() doom_wad_dir "{0}"'.format(doom_wad_dir))
 
+            # >> Progress dialog
+            pDialog = xbmcgui.DialogProgress()
+            pDialog_canceled = False
+            pDialog.create('Advanced DOOM Launcher', 'Scanning files in WAD directory ...')
+
             # >> Scan and get list of files
             root_file_list = []
             pwad_file_list = []
@@ -424,21 +429,23 @@ class Main:
                     for filename in filenames: 
                         log_debug('File "{0}"'.format(os.path.join(root, filename)))
                         pwad_file_list.append(FileName(os.path.join(root, filename)))
+            pDialog.update(100)
+            pDialog.close()
 
             # >> Now scan for actual IWADs/PWADs
             iwads = fs_scan_iwads(root_file_list)
             pwads = fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH)
             pwad_index_dic = fs_build_pwad_index_dic(doom_wad_dir, pwads)
-            # log_info(pprint.pprint(iwads))
-            # log_info(pprint.pprint(pwads))
-            # log_info(pprint.pprint(pwad_index_dic))
 
             # >> Save databases
+            kodi_busydialog_ON()
             fs_write_JSON_file(IWADS_FILE_PATH.getPath(), iwads)
             fs_write_JSON_file(PWADS_FILE_PATH.getPath(), pwads)
             fs_write_JSON_file(PWADS_IDX_FILE_PATH.getPath(), pwad_index_dic)
+            kodi_busydialog_OFF()
 
-        kodi_refresh_container()
+            # >> Refresh container
+            kodi_refresh_container()
 
     # ---------------------------------------------------------------------------------------------
     # Launch IWAD

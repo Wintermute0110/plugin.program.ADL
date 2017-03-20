@@ -206,6 +206,7 @@ def fs_write_JSON_file(json_filename, json_data):
 # -------------------------------------------------------------------------------------------------
 def fs_scan_iwads(root_file_list):
     log_debug('Starting fs_scan_iwads() ...')
+    
     iwads = []
     for file in root_file_list:
         log_debug('Scanning file "{0}"'.format(file.getPath()))
@@ -247,6 +248,10 @@ def fs_scan_iwads(root_file_list):
 def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
     log_debug('Starting fs_scan_pwads() ...')
     log_debug('doom_wad_dir = "{0}"'.format(doom_wad_dir))
+    pDialog = xbmcgui.DialogProgress()
+    pDialog.create('Advanced DOOM Launcher', 'Scanning PWADs ...')
+    num_files = len(pwad_file_list)
+    file_count = 0
     pwads = {}
     for file in pwad_file_list:
         file_str = file.getPath()
@@ -299,6 +304,11 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
                 pwads[pwad['filename']] = pwad
             else:
                 log_debug('Skipping PWAD. Does not have levels')
+        # >> Update progress dialog
+        file_count += 1
+        pDialog.update(file_count * 100 / num_files)
+    pDialog.update(100)
+    pDialog.close()
 
     return pwads
 
