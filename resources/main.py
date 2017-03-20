@@ -85,7 +85,7 @@ class Main:
         log_debug('__addon_version__ {0}'.format(__addon_version__))
         for i in range(len(sys.argv)): log_debug('sys.argv[{0}] = "{1}"'.format(i, sys.argv[i]))
         # log_debug('sys.path {0}'.format(sys.path))
-        
+
         # --- Addon data paths creation ---
         if not PLUGIN_DATA_DIR.exists():          PLUGIN_DATA_DIR.makedirs()
 
