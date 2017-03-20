@@ -225,7 +225,8 @@ def fs_scan_iwads(root_file_list):
             if file_size == iwad_info[2]:
                 log_info('Found IWAD "{0}" by file size matching'.format(iwad_info[1]))
                 iwad = fs_new_IWAD_object()
-                iwad['filename'] = file.getPath()
+                # In database paths separators are always '/'
+                iwad['filename'] = file.getPath().replace('\\', '/')
                 iwad['iwad']     = iwad_info[0]
                 iwad['name']     = iwad_info[1]
                 iwad['size']     = iwad_info[2]
@@ -241,7 +242,7 @@ def fs_scan_iwads(root_file_list):
                 if wad_name == file.getBase():
                     log_info('Found IWAD "{0}" by file name matching'.format(file.getBase()))
                     iwad = fs_new_IWAD_object()
-                    iwad['filename'] = file.getPath()
+                    iwad['filename'] = file.getPath().replace('\\', '/')
                     iwad['iwad']     = iwad_type
                     if iwad_type == IWAD_FD_1:   iwad['name'] = 'FreeDoom: Phase 1'
                     elif iwad_type == IWAD_FD_2: iwad['name'] = 'FreeDoom: Phase 2'
@@ -280,9 +281,11 @@ def fs_scan_pwads(PATHS, pwad_file_list):
             pwad_dir = file.getDir()
             wad_relative_dir_FN = FileName(pwad_dir.replace(PATHS.doom_wad_dir.getPath(), ''))
             log_debug('Relative dir "{0}"'.format(wad_relative_dir_FN.getPath()))
+            # In the database paths are always stored as '/'
+            database_filename = file.getPath().replace('\\', '/')
             pwad = fs_new_PWAD_object()
             pwad['dir']        = wad_relative_dir_FN.getPath()
-            pwad['filename']   = file.getPath()
+            pwad['filename']   = database_filename
             pwad['name']       = file.getBase_noext()
             pwad['num_levels'] = inwad.maps._n
             pwad['level_list'] = level_name_list

@@ -476,6 +476,52 @@ class Main:
             # >> Refresh container
             kodi_refresh_container()
 
+    #
+    # Choose DOOM executable for an IWAD
+    #
+    def _misc_get_doom_executable(self):
+        doom_exe_FN_list = []
+        doom_exe_name_list = []
+        if PATHS.chocolate_doom_prog.isfile():
+            doom_exe_FN_list.append(PATHS.chocolate_doom_prog)
+            doom_exe_name_list.append(PATHS.chocolate_doom_prog.getBase_noext().capitalize())
+        if PATHS.prboom_plus_prog.isfile():
+            doom_exe_FN_list.append(PATHS.prboom_plus_prog)
+            doom_exe_name_list.append(PATHS.prboom_plus_prog.getBase_noext().capitalize())
+        if PATHS.zdoom_doom_prog.isfile():
+            doom_exe_FN_list.append(PATHS.zdoom_doom_prog)
+            doom_exe_name_list.append(PATHS.zdoom_doom_prog.getBase_noext().capitalize())
+
+        # >> If not executables warn user and abort
+        if len(doom_exe_name_list) < 1:
+            return None
+        # >> If only one exectuable there is nothing to choose
+        elif len(doom_exe_name_list) == 1:
+            log_info('_run_iwad() Only 1 DOOM executable configured.')
+            doom_prog_FN = doom_exe_FN_list[0]
+        else:
+            dialog = xbmcgui.Dialog()
+            menu_item = dialog.select('Choose DOOM executable', doom_exe_name_list)
+            if menu_item < 0: return
+            log_info('_run_iwad() User choos DOOM exe index {0}'.format(menu_item))
+            doom_prog_FN = doom_exe_FN_list[menu_item]
+
+        return doom_prog_FN
+
+    #
+    # Choose DOOM executable for an IWAD
+    #
+    def _misc_get_iwad_to_launch_pwad(self, iwads, pwad):
+        # >> Pick first IWAD that matches game type
+        for iwad in iwads:
+            if iwad['iwad'] == pwad['iwad']:
+                IWAD_FN = FileName(iwad['filename'])
+                log_debug('_misc_get_iwad_to_launch_pwad() IWAD "{0}"'.format(IWAD_FN.getPath()))
+
+                return IWAD_FN
+
+        return None
+
     # ---------------------------------------------------------------------------------------------
     # Launch IWAD
     # ---------------------------------------------------------------------------------------------
@@ -488,33 +534,12 @@ class Main:
             kodi_dialog_OK('IWAD does not exist.')
             return
 
-        # >> If user configured multiple DOOM executables show a list
-        doom_exe_FN_list = []
-        doom_exe_name_list = []
-        if PATHS.chocolate_doom_prog.isfile():
-            doom_exe_FN_list.append(PATHS.chocolate_doom_prog)
-            doom_exe_name_list.append(PATHS.chocolate_doom_prog.getBase_noext().capitalize())
-        if PATHS.prboom_plus_prog.isfile():
-            doom_exe_FN_list.append(PATHS.prboom_plus_prog)
-            doom_exe_name_list.append(PATHS.prboom_plus_prog.getBase_noext().capitalize())
-        if PATHS.zdoom_doom_prog.isfile():
-            doom_exe_FN_list.append(PATHS.zdoom_doom_prog)
-            doom_exe_name_list.append(PATHS.zdoom_doom_prog.getBase_noext().capitalize())
-        # >> If not executables warn user and abort
-        if len(doom_exe_name_list) < 1:
+        # --- If user configured multiple DOOM executables show a list ---
+        doom_prog_FN = self._misc_get_doom_executable()
+        if doom_prog_FN == None:
             log_info('_run_iwad() No DOOM executables configured. Aboting.')
             kodi_dialog_OK('No DOOM exectuable configured. Aborting.')
             return
-        # >> If only one exectuable there is nothing to choose
-        elif len(doom_exe_name_list) == 1:
-            log_info('_run_iwad() Only 1 DOOM executable configured.')
-            doom_prog_FN = doom_exe_FN_list[0]
-        else:
-            dialog = xbmcgui.Dialog()
-            menu_item = dialog.select('Choose DOOM executable', doom_exe_name_list)
-            if menu_item < 0: return
-            log_info('_run_iwad() User choos DOOM exe index {0}'.format(menu_item))
-            doom_prog_FN = doom_exe_FN_list[menu_item]
 
         # >> Launch machine using subprocess module
         (doom_dir, doom_exec) = os.path.split(doom_prog_FN.getPath())
@@ -532,17 +557,34 @@ class Main:
     # ---------------------------------------------------------------------------------------------
     # Launch PWAD
     # ---------------------------------------------------------------------------------------------
-    def _run_pwad(self, filename):
-        log_info('_run_pwad() Launching PWAD "{0}"'.format(filename))
-
-        # >> Get paths
-        doom_exe_path = self.settings['doom_prog']
-        doom_prog_FN = FileName(doom_exe_path)
+    def _run_pwad(self, pwad_filename):
+        log_info('_run_pwad() Launching PWAD "{0}"'.format(pwad_filename))
 
         # >> Check if ROM exist
-        PWAD_FN = FileName(filename)
+        PWAD_FN = FileName(pwad_filename)
         if not PWAD_FN.exists():
             kodi_dialog_OK('PWAD does not exist.')
+            return
+
+        # --- Get PWAD database entry ---
+        iwads = fs_load_JSON_file(PATHS.IWADS_FILE_PATH.getPath())
+        pwads = fs_load_JSON_file(PATHS.PWADS_FILE_PATH.getPath())
+        pwad_filename = pwad_filename.replace('\\', '/')
+        pwad = pwads[pwad_filename]
+
+        # --- Choose DOOM executable based on required engine or return None ---
+        doom_prog_FN = self._misc_get_doom_executable()
+        if doom_prog_FN == None:
+            log_info('_run_pwad() No DOOM executables configured. Aboting.')
+            kodi_dialog_OK('No DOOM exectuable configured. Aborting.')
+            return
+
+        # --- Choose DOOM IWAD based on game type or return None ---
+        IWAD_FN = self._misc_get_iwad_to_launch_pwad(iwads, pwad)
+        if IWAD_FN == None:
+            log_info('_run_pwad() No DOOM IWAD found. Aborting.')
+            kodi_dialog_OK('No suitable DOOM IWAD found to launch this PWAD '
+                           '({0} IWAD).'.format(pwad['iwad']))
             return
 
         # >> Launch machine using subprocess module
@@ -553,7 +595,7 @@ class Main:
         log_info('_run_pwad() PWAD_FN      "{0}"'.format(PWAD_FN.getPath()))
 
         # >> Argument list
-        arg_list = [doom_prog_FN.getPath(), '-iwad', '/home/mendi/Games/doom/doom.wad', '-file', PWAD_FN.getPath()]
+        arg_list = [doom_prog_FN.getPath(), '-iwad', IWAD_FN.getPath(), '-file', PWAD_FN.getPath()]
         log_info('_run_pwad() arg_list {0}'.format(arg_list))
 
         self._run_process(arg_list, doom_dir)

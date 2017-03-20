@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Advanced Emulator Launcher miscellaneous functions
+# Advanced DOOM Launcher miscellaneous Kodi API-related functions
 #
 
 # Copyright (c) 2016-2017 Wintermute0110 <wintermute0110@gmail.com>
@@ -14,17 +14,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-#
-# Utility functions which DEPEND on Kodi modules
-#
+# --- Python standard library ---
+from __future__ import unicode_literals
 import sys, os, shutil, time, random, hashlib, urlparse
 import xbmc, xbmcgui
 
-# Addon custom modules/packages
-# import utils
-# import disk_IO
 
 # --- Constants ---------------------------------------------------------------
+ADDON_SHORT_NAME  = 'ADL'
+ADDON_NAME        = 'Advanced DOOM Launcher'
 LOG_ERROR   = 0
 LOG_WARNING = 1
 LOG_INFO    = 2
@@ -51,31 +49,31 @@ def log_debug(str_text):
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
                                   
         # At this point we are sure str_text is a unicode string.
-        log_text = u'AML DEBUG: ' + str_text
+        log_text = ADDON_SHORT_NAME + ' DEBUG: ' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 def log_verb(str_text):
     if current_log_level >= LOG_VERB:
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
-        log_text = u'AML VERB : ' + str_text
+        log_text = ADDON_SHORT_NAME + ' VERB :' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 def log_info(str_text):
     if current_log_level >= LOG_INFO:
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
-        log_text = u'AML INFO : ' + str_text
+        log_text = ADDON_SHORT_NAME + ' INFO :' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 def log_warning(str_text):
     if current_log_level >= LOG_WARNING:
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
-        log_text = u'AML WARN : ' + str_text
+        log_text = ADDON_SHORT_NAME + ' WARN :' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 def log_error(str_text):
     if current_log_level >= LOG_ERROR:
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
-        log_text = u'AML ERROR: ' + str_text
+        log_text = ADDON_SHORT_NAME + ' ERROR:' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 # -----------------------------------------------------------------------------
@@ -88,13 +86,13 @@ def log_error(str_text):
 #  1) ret = kodi_dialog_OK('Launch ROM?')
 #  2) ret = kodi_dialog_OK('Launch ROM?', title = 'AML - Launcher')
 #
-def kodi_dialog_OK(row1, row2='', row3='', title = 'Advanced MAME Launcher'):
+def kodi_dialog_OK(row1, row2='', row3='', title = ADDON_NAME):
     dialog = xbmcgui.Dialog()
     dialog.ok(title, row1, row2, row3)
 
 #
 # Returns True is YES was pressed, returns False if NO was pressed or dialog canceled.
-def kodi_dialog_yesno(row1, row2='', row3='', title = 'Advanced MAME Launcher'):
+def kodi_dialog_yesno(row1, row2='', row3='', title = ADDON_NAME):
     dialog = xbmcgui.Dialog()
     ret = dialog.yesno(title, row1, row2, row3)
 
@@ -103,18 +101,18 @@ def kodi_dialog_yesno(row1, row2='', row3='', title = 'Advanced MAME Launcher'):
 #
 # Displays a small box in the bottom right corner
 #
-def kodi_notify(text, title = 'Advanced MAME Launcher', time = 5000):
+def kodi_notify(text, title = ADDON_NAME, time = 5000):
     dialog = xbmcgui.Dialog()
     dialog.notification(title, text, xbmcgui.NOTIFICATION_INFO, time)
 
-def kodi_notify_warn(text, title = 'Advanced MAME Launcher warning', time = 7000):
+def kodi_notify_warn(text, title = ADDON_NAME + ' warning', time = 7000):
     dialog = xbmcgui.Dialog()
     dialog.notification(title, text, xbmcgui.NOTIFICATION_WARNING, time)
 
 #
 # Do not use this function much because it is the same icon as when Python fails, and that may confuse the user.
 #
-def kodi_notify_error(text, title = 'Advanced MAME Launcher error', time = 7000):
+def kodi_notify_error(text, title = ADDON_NAME + ' error', time = 7000):
     dialog = xbmcgui.Dialog()
     dialog.notification(title, text, xbmcgui.NOTIFICATION_ERROR, time)
 
