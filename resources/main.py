@@ -53,14 +53,20 @@ HOME_DIR                = FileName('special://home')
 KODI_FAV_FILE_PATH      = FileName('special://profile/favourites.xml')
 ADDONS_DIR              = HOME_DIR.pjoin('addons')
 CURRENT_ADDON_DIR       = ADDONS_DIR.pjoin(__addon_id__)
-IWADS_FILE_PATH         = PLUGIN_DATA_DIR.pjoin('iwads.json')
-PWADS_FILE_PATH         = PLUGIN_DATA_DIR.pjoin('pwads.json')
-PWADS_IDX_FILE_PATH     = PLUGIN_DATA_DIR.pjoin('pwads_idx.json')
-LAUNCH_LOG_FILE_PATH    = PLUGIN_DATA_DIR.pjoin('launcher.log')
-RECENT_PLAYED_FILE_PATH = PLUGIN_DATA_DIR.pjoin('history.json')
-MOST_PLAYED_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('most_played.json')
-DOOM_OUTPUT_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('doom_output.log')
-FONT_FILE_PATH          = CURRENT_ADDON_DIR.pjoin('fonts/DooM.ttf')
+
+# --- Plugin database indices ---
+class Adoon_Paths:
+    def __init__(self):
+        self.IWADS_FILE_PATH         = PLUGIN_DATA_DIR.pjoin('iwads.json')
+        self.PWADS_FILE_PATH         = PLUGIN_DATA_DIR.pjoin('pwads.json')
+        self.PWADS_IDX_FILE_PATH     = PLUGIN_DATA_DIR.pjoin('pwads_idx.json')
+        self.LAUNCH_LOG_FILE_PATH    = PLUGIN_DATA_DIR.pjoin('launcher.log')
+        self.RECENT_PLAYED_FILE_PATH = PLUGIN_DATA_DIR.pjoin('history.json')
+        self.MOST_PLAYED_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('most_played.json')
+        self.DOOM_OUTPUT_FILE_PATH   = PLUGIN_DATA_DIR.pjoin('doom_output.log')
+        self.FONT_FILE_PATH          = CURRENT_ADDON_DIR.pjoin('fonts/DooM.ttf')
+# Global variable with all paths
+PATHS = Adoon_Paths()
 
 # --- Main code -----------------------------------------------------------------------------------
 class Main:
@@ -127,12 +133,20 @@ class Main:
     # Get Addon Settings
     #
     def _get_settings(self):
+        # >> Modify global PATHS object instance
+        global PATHS
+
         # Get the users preference settings
         self.settings = {}
 
         # --- Paths ---
-        self.settings['doom_prog']               = __addon_obj__.getSetting('doom_prog').decode('utf-8')
+        self.settings['chocolate_doom_prog']     = __addon_obj__.getSetting('chocolate_doom_prog').decode('utf-8')
+        self.settings['prboom_plus_prog']        = __addon_obj__.getSetting('prboom_plus_prog').decode('utf-8')
+        self.settings['zdoom_doom_prog']         = __addon_obj__.getSetting('zdoom_doom_prog').decode('utf-8')
+
         self.settings['doom_wad_dir']            = __addon_obj__.getSetting('doom_wad_dir').decode('utf-8')
+        self.settings['artwork_dir']             = __addon_obj__.getSetting('artwork_dir').decode('utf-8')
+        self.settings['savegame_dir']            = __addon_obj__.getSetting('savegame_dir').decode('utf-8')
 
         # --- Display ---
         self.settings['display_launcher_notify'] = True if __addon_obj__.getSetting('display_launcher_notify') == 'true' else False
@@ -145,6 +159,14 @@ class Main:
         # for key in sorted(self.settings):
         #     log_debug('{0} --> {1:10s} {2}'.format(key.rjust(21), str(self.settings[key]), type(self.settings[key])))
         # log_debug('Settings dump END')
+
+        # >> Add addon settings paths to global paths. This is convenient for coding.
+        PATHS.chocolate_doom_prog = FileName(self.settings['chocolate_doom_prog'])
+        PATHS.prboom_plus_prog    = FileName(self.settings['prboom_plus_prog'])
+        PATHS.zdoom_doom_prog     = FileName(self.settings['zdoom_doom_prog'])
+        PATHS.doom_wad_dir        = FileName(self.settings['doom_wad_dir'])
+        PATHS.artwork_dir         = FileName(self.settings['artwork_dir'])
+        PATHS.savegame_dir        = FileName(self.settings['savegame_dir'])
 
     # ---------------------------------------------------------------------------------------------
     # Root menu rendering
@@ -187,7 +209,7 @@ class Main:
 
     def _render_IWAD_list(self):
         # >> Open IWAD database
-        iwads = fs_load_JSON_file(IWADS_FILE_PATH.getPath())
+        iwads = fs_load_JSON_file(PATHS.IWADS_FILE_PATH.getPath())
 
         # >> Traverse and render
         self._set_Kodi_all_sorting_methods()
@@ -198,8 +220,8 @@ class Main:
         log_debug('_command_browse_fs() directory "{0}"'.format(directory))
 
         # >> Open PWAD database and index
-        pwads = fs_load_JSON_file(PWADS_FILE_PATH.getPath())
-        pwad_index_dic = fs_load_JSON_file(PWADS_IDX_FILE_PATH.getPath())
+        pwads = fs_load_JSON_file(PATHS.PWADS_FILE_PATH.getPath())
+        pwad_index_dic = fs_load_JSON_file(PATHS.PWADS_IDX_FILE_PATH.getPath())
 
         # >> Get dirs and wads
         dirs = pwad_index_dic[directory]['dirs']
@@ -398,8 +420,15 @@ class Main:
         # --- WAD directory scanner ---
         # >> Scans for IWADs and PWADs and builds databases
         if menu_item == 0:
-            doom_wad_dir = self.settings['doom_wad_dir']
-            log_info('_command_setup_plugin() doom_wad_dir "{0}"'.format(doom_wad_dir))
+            # >> Check if WAD and artwork directory is set. Abort if not
+            if not PATHS.doom_wad_dir.isdir():
+                kodi_dialog_OK('WAD directory not configured. Aborting.')
+                return
+            if not PATHS.artwork_dir.isdir():
+                kodi_dialog_OK('Artwork directory not configured. Aborting.')
+                return
+            log_info('_command_setup_plugin() doom_wad_dir "{0}"'.format(PATHS.doom_wad_dir.getPath()))
+            log_info('_command_setup_plugin() artwork_dir  "{0}"'.format(PATHS.artwork_dir.getPath()))
 
             # >> Progress dialog
             pDialog = xbmcgui.DialogProgress()
@@ -409,7 +438,7 @@ class Main:
             # >> Scan and get list of files
             root_file_list = []
             pwad_file_list = []
-            for root, directories, filenames in os.walk(doom_wad_dir):
+            for root, directories, filenames in os.walk(PATHS.doom_wad_dir.getPath()):
                 # >> This produces one iteration for each directory found (including the root directory)
                 # >> See http://www.saltycrane.com/blog/2007/03/python-oswalk-example/
                 log_debug('_command_setup_plugin() Dir "{0}"'.format(root))
@@ -417,7 +446,7 @@ class Main:
                 #     log_debug('Dir  "{0}"'.format(os.path.join(root, directory)))
 
                 # >> If root directory scan for IWADs only
-                if root == doom_wad_dir:
+                if root == PATHS.doom_wad_dir.getPath():
                     log_info('_command_setup_plugin() Adding files to IWAD scanner ...')
                     for filename in filenames: 
                         log_debug('File "{0}"'.format(os.path.join(root, filename)))
@@ -434,14 +463,14 @@ class Main:
 
             # >> Now scan for actual IWADs/PWADs
             iwads = fs_scan_iwads(root_file_list)
-            pwads = fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH)
-            pwad_index_dic = fs_build_pwad_index_dic(doom_wad_dir, pwads)
+            pwads = fs_scan_pwads(PATHS, pwad_file_list)
+            pwad_index_dic = fs_build_pwad_index_dic(PATHS, pwads)
 
             # >> Save databases
             kodi_busydialog_ON()
-            fs_write_JSON_file(IWADS_FILE_PATH.getPath(), iwads)
-            fs_write_JSON_file(PWADS_FILE_PATH.getPath(), pwads)
-            fs_write_JSON_file(PWADS_IDX_FILE_PATH.getPath(), pwad_index_dic)
+            fs_write_JSON_file(PATHS.IWADS_FILE_PATH.getPath(), iwads)
+            fs_write_JSON_file(PATHS.PWADS_FILE_PATH.getPath(), pwads)
+            fs_write_JSON_file(PATHS.PWADS_IDX_FILE_PATH.getPath(), pwad_index_dic)
             kodi_busydialog_OFF()
 
             # >> Refresh container

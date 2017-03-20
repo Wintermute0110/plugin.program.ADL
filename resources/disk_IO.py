@@ -252,9 +252,9 @@ def fs_scan_iwads(root_file_list):
 
     return iwads
 
-def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
+def fs_scan_pwads(PATHS, pwad_file_list):
     log_debug('Starting fs_scan_pwads() ...')
-    log_debug('doom_wad_dir = "{0}"'.format(doom_wad_dir))
+    log_debug('doom_wad_dir = "{0}"'.format(PATHS.doom_wad_dir.getPath()))
     pDialog = xbmcgui.DialogProgress()
     pDialog.create('Advanced DOOM Launcher', 'Scanning PWADs ...')
     num_files = len(pwad_file_list)
@@ -278,7 +278,7 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
 
             # >> Create PWAD database dictionary entry
             pwad_dir = file.getDir()
-            wad_dir = pwad_dir.replace(doom_wad_dir, '/')
+            wad_dir = pwad_dir.replace(PATHS.doom_wad_dir.getPath(), '/')
             pwad = fs_new_PWAD_object()
             pwad['dir']        = wad_dir
             pwad['filename']   = file.getPath()
@@ -303,7 +303,7 @@ def fs_scan_pwads(doom_wad_dir, pwad_file_list, FONT_FILE_PATH):
                 # >> Create poster with level information
                 poster_FN = FileName(file.getPath_noext() + '_poster.png')
                 log_debug('Creating POSTER "{0}"'.format(poster_FN.getPath()))
-                drawposter(pwad, poster_FN.getPath(), FONT_FILE_PATH)
+                drawposter(pwad, poster_FN.getPath(), PATHS.FONT_FILE_PATH.getPath())
                 pwad['poster'] = poster_FN.getPath()
 
                 # >> Add PWAD to database. Only add the PWAD if it contains level.
@@ -445,14 +445,14 @@ def drawmap(wad, name, filename, format, pxsize, pysize):
     del draw
     im.save(filename, format)
 
-def drawposter(pwad, filename, FONT_FILE_PATH):
+def drawposter(pwad, filename, font_filename):
     log_debug('drawposter() Drawing poster "{0}"'.format(filename))
     if not PILLOW_AVAILABLE:
         log_debug('drawposter() Pillow not available. Returning...')
         return
 
     # --- CONSTANTS ---
-    font_filename = FONT_FILE_PATH.getPath()
+    font_filename = font_filename
     FONTSIZE  = 40
     LINESPACE = 65
     XMARGIN   = 40
