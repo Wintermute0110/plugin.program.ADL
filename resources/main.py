@@ -171,19 +171,22 @@ class Main:
     # ---------------------------------------------------------------------------------------------
     # Root menu rendering
     # ---------------------------------------------------------------------------------------------
-    # NOTE Devices are excluded from main PClone list.
     def _command_render_main_menu(self):
-        # >> Render detected IWADs as standalone launchers
+        # --- Sorting methods --
+        self._set_Kodi_all_sorting_methods()
+
+        # --- Render detected IWADs as standalone launchers ---
         self._render_IWAD_list()
 
-        # >> Filesystem browser
+        # --- Filesystem browser ---
         self._render_root_list_row('[Browse filesystem]', self._misc_url_2_arg('command', 'BROWSE_FS', 'dir', '/'))
 
-        # >> Virtual Launchers
-        # self._render_root_list_row('[Category browser]',    self._misc_url_1_arg('command', 'BROWSE_CATEGORIES'))
-        # self._render_root_list_row('[Mega WADs]',           self._misc_url_1_arg('command', 'BROWSE_MEGAWADS'))
-        # self._render_root_list_row('[Multiple level WADs]', self._misc_url_1_arg('command', 'BROWSE_ML_WADS'))
-        # self._render_root_list_row('[Single level WADs]',   self._misc_url_1_arg('command', 'BROWSE_SL_WADS'))
+        # --- Virtual Launchers ---
+        # self._render_root_list_row('{Category browser}',    self._misc_url_1_arg('command', 'BROWSE_CATEGORIES'))
+        # self._render_root_list_row('{Mega WADs}',           self._misc_url_1_arg('command', 'BROWSE_MEGA_WADS'))
+        # self._render_root_list_row('{Episode WADs}',        self._misc_url_1_arg('command', 'BROWSE_EP_WADS'))
+        # self._render_root_list_row('{Multiple level WADs}', self._misc_url_1_arg('command', 'BROWSE_ML_WADS'))
+        # self._render_root_list_row('{Single level WADs}',   self._misc_url_1_arg('command', 'BROWSE_SL_WADS'))
         # self._render_root_list_row('<Favourite WADs>',      self._misc_url_1_arg('command', 'SHOW_FAVS'))
         xbmcplugin.endOfDirectory(handle = self.addon_handle, succeeded = True, cacheToDisc = False)
 
