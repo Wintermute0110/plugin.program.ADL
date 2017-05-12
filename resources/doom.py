@@ -15,6 +15,7 @@
 
 # --- Python standard library ---
 from __future__ import unicode_literals
+import math
 try:
     from PIL import Image, ImageDraw, ImageFont
     PILLOW_AVAILABLE = True
@@ -147,7 +148,7 @@ DOOM2_STR_LIST = [
 ]
 
 # --- Hard coded constants ---
-BORDER_PIXELS = 25
+BORDER_PERCENT = 10
 
 # -------------------------------------------------------------------------------------------------
 # Doom utility functions
@@ -198,6 +199,167 @@ def doom_determine_engine(pwad):
 # -------------------------------------------------------------------------------------------------
 # Drawing functions
 # -------------------------------------------------------------------------------------------------
+class LinearTransform:
+    def __init__(self, left, right, bottom, top, px_size, py_size, border):
+        self.left    = left
+        self.right   = right
+        self.bottom  = bottom
+        self.top     = top
+        self.x_size  = right - left
+        self.y_size  = top - bottom
+        # --- Shift map in x or y direction ---
+        self.pan_x  = 0
+        self.pan_y  = 0
+
+        print('LinearTransform() left       = {0}'.format(left))
+        print('LinearTransform() right      = {0}'.format(right))
+        print('LinearTransform() bottom     = {0}'.format(bottom))
+        print('LinearTransform() top        = {0}'.format(top))
+        print('LinearTransform() x_size     = {0}'.format(self.x_size))
+        print('LinearTransform() y_size     = {0}'.format(self.y_size))
+
+        # --- Calculate scale in [pixels] / [map_unit] ---
+        self.px_size = px_size
+        self.py_size = py_size
+        self.border  = border
+        self.border_x = px_size * border / 100
+        self.border_y = py_size * border / 100
+        self.pxsize_nob = px_size - 2*self.border_x
+        self.pysize_nob = py_size - 2*self.border_y
+        self.x_scale = self.pxsize_nob / float(self.x_size)
+        self.y_scale = self.pysize_nob / float(self.y_size)
+        if self.x_scale < self.y_scale:
+            self.scale   = self.x_scale
+            self.xoffset = self.border_x
+            self.yoffset = (py_size - int(self.y_size*self.scale)) / 2
+        else:
+            self.scale   = self.y_scale
+            self.xoffset = (px_size - int(self.x_size*self.scale)) / 2
+            self.yoffset = self.border_y
+        print('LinearTransform() px_size    = {0}'.format(px_size))
+        print('LinearTransform() py_size    = {0}'.format(py_size))
+        print('LinearTransform() border     = {0}'.format(border))
+        print('LinearTransform() border_x   = {0}'.format(self.border_x))
+        print('LinearTransform() border_y   = {0}'.format(self.border_y))
+        print('LinearTransform() pxsize_nob = {0}'.format(self.pxsize_nob))
+        print('LinearTransform() pysize_nob = {0}'.format(self.pysize_nob))
+        print('LinearTransform() xscale     = {0}'.format(self.x_scale))
+        print('LinearTransform() yscale     = {0}'.format(self.y_scale))
+        print('LinearTransform() scale      = {0}'.format(self.scale))
+        print('LinearTransform() xoffset    = {0}'.format(self.xoffset))
+        print('LinearTransform() yoffset    = {0}'.format(self.yoffset))
+
+    def MapToScreen(self, map_x, map_y):
+        screen_x = self.scale * (+map_x - self.left) + self.xoffset
+        screen_y = self.scale * (-map_y + self.top)  + self.yoffset
+
+        return (int(screen_x), int(screen_y))
+
+    def ScreenToMap(self, screen_x, screen_y):
+        map_x = +(screen_x - self.xoffset + self.scale * self.left) / self.scale
+        map_y = -(screen_y - self.yoffset - self.scale * self.top) / self.scale
+
+        return (int(map_x), int(map_y))
+
+# See https://github.com/chocolate-doom/chocolate-doom/blob/sdl2-branch/src/doom/am_map.c
+class ColorScheme:
+    def __init__(self, back, wall, tswall, awall, fdwall, cdwall, thing):
+        self.BG      = back
+        self.WALL    = wall   # One sided linedef
+        self.TS_WALL = tswall # Two sided linedef
+        self.A_WALL  = awall  # Action wall
+        self.FD_WALL = fdwall # Two sided, floor level change
+        self.CD_WALL = cdwall # Two sided, ceiling level change and same floor level
+        self.THING   = thing  # Thing color
+
+CDoomWorld = ColorScheme(
+    (255, 255, 255),
+    (0, 0, 0),
+    (144, 144, 144),
+    (0, 255, 0),
+    (0, 0, 255),
+    (220, 130, 50),
+    (0, 255, 0)
+)
+
+CClassic = ColorScheme(
+    (0, 0, 0),       # BACK black
+    (255, 0, 0),     # WALL red
+    (150, 150, 150), # TS_WALL grey
+    (255, 255, 255), # A_WALL white
+    (139, 92, 55),   # FD_WALL brown
+    (255, 255, 0),   # CD_WALL yellow
+    (220, 130, 50),  # THING green
+)
+
+def draw_line(draw, p1x, p1y, p2x, p2y, color):
+    draw.line((p1x, p1y, p2x, p2y), fill = color)
+
+def draw_thick_line(draw, p1x, p1y, p2x, p2y, color):
+    draw.line((p1x, p1y, p2x, p2y), fill = color)
+    draw.line((p1x+1, p1y, p2x+1, p2y), fill = color)
+    draw.line((p1x-1, p1y, p2x-1, p2y), fill = color)
+    draw.line((p1x, p1y+1, p2x, p2y+1), fill = color)
+    draw.line((p1x, p1y-1, p2x, p2y-1), fill = color)
+
+def draw_axis(draw, LT, color):
+    (pxzero, pyzero) = LT.MapToScreen(0, 0)
+    draw.line((0, pyzero, LT.px_size, pyzero), fill = color)
+    draw.line((pxzero, 0, pxzero, LT.py_size), fill = color)
+
+#
+# A level must be contained within a 16384-unit radius as measured from its center point.
+# Point A is the top-left corner.
+#
+# A---------B---------C   A-C gap 327 map units
+# |         |         |   A-B gap 163 map units
+# |         E         |   A-D gap is 163/2 map units
+# D                   F   B-E gap is 163/4 map units
+#
+def draw_scale(draw, LT, color):
+    (A_px, A_py) = LT.MapToScreen(LT.right-256, LT.top)
+    (B_px, B_py) = LT.MapToScreen(LT.right-128, LT.top)
+    (C_px, C_py) = LT.MapToScreen(LT.right, LT.top)
+    (D_px, D_py) = LT.MapToScreen(LT.right-256, LT.top-128/2)
+    (E_px, E_py) = LT.MapToScreen(LT.right-128, LT.top-128/4)
+    (F_px, F_py) = LT.MapToScreen(LT.right, LT.top-128/2)
+
+    draw.line((A_px, A_py, C_px, C_py), fill = color) # A -> C
+    draw.line((A_px, A_py, D_px, D_py), fill = color) # A -> D
+    draw.line((B_px, B_py, E_px, E_py), fill = color) # B -> E
+    draw.line((C_px, C_py, F_px, F_py), fill = color) # C -> F
+
+#
+# Draw a triangle with same size as in Vanilla Doom
+# https://github.com/chocolate-doom/chocolate-doom/blob/sdl2-branch/src/doom/am_map.c#L186
+# https://github.com/chocolate-doom/chocolate-doom/blob/sdl2-branch/src/doom/am_map.c#L1314
+#
+thintriangle_guy = [
+    [[-8, -11.2], [16,   0.0]],
+    [[16,   0.0], [-8,  11.2]],
+    [[-8,  11.2], [-8, -11.2]]
+]
+
+def draw_thing(draw, LT, map_x, map_y, angle, color):
+    angle_rad = math.radians(angle)
+    for line in thintriangle_guy:
+        # -- Rotate ---
+        rot_a_x = line[0][0] * math.cos(angle_rad) - line[0][1] * math.sin(angle_rad)
+        rot_a_y = line[0][0] * math.sin(angle_rad) + line[0][1] * math.cos(angle_rad)
+        rot_b_x = line[1][0] * math.cos(angle_rad) - line[1][1] * math.sin(angle_rad)
+        rot_b_y = line[1][0] * math.sin(angle_rad) + line[1][1] * math.cos(angle_rad)
+
+        # --- Translate to thing coordinates on map ---
+        A_x = rot_a_x + map_x
+        A_y = rot_a_y + map_y
+        B_x = rot_b_x + map_x
+        B_y = rot_b_y + map_y
+
+        # --- Draw line ---
+        (A_px, A_py) = LT.MapToScreen(A_x, A_y)
+        (B_px, B_py) = LT.MapToScreen(B_x, B_y)
+        draw.line((A_px, A_py, B_px, B_py), fill = (0, 255, 0))
+
 #
 # Fanarts have resolutions
 # A) 1280x720 (720p)
@@ -205,64 +367,73 @@ def doom_determine_engine(pwad):
 # C) 3840x2160 (2160p or 4K)
 # D) 7680x4320 (4320p or 8K)
 #
-def doom_draw_map(wad, name, filename, format, pxsize, pysize):
+def doom_draw_map(wad, name, filename, format, px_size, py_size):
     log_debug('drawmap() Drawing map "{0}"'.format(filename))
     if not PILLOW_AVAILABLE:
         log_debug('drawmap() Pillow not available. Returning...')
         return
+    cscheme = CClassic
 
-    # Load map in editor
+    # --- Load map in editor ---
     edit = MapEditor(wad.maps[name])
 
-    # Determine scale = map area unit / pixel
+    # --- Determine scale = pixel / map unit ---
     xmin = min([v.x for v in edit.vertexes])
     xmax = max([v.x for v in edit.vertexes])
-    ymin = min([-v.y for v in edit.vertexes])
-    ymax = max([-v.y for v in edit.vertexes])
-    xsize = xmax - xmin
-    ysize = ymax - ymin
-    scale_x = (pxsize-BORDER_PIXELS*2) / float(xsize)
-    scale_y = (pysize-BORDER_PIXELS*2) / float(ysize)
-    if scale_x < scale_y:
-        scale = scale_x
-        xoffset = 0
-        yoffset = (pysize - int(ysize*scale)) / 2
-    else:
-        scale = scale_y
-        xoffset = (pxsize - int(xsize*scale)) / 2
-        yoffset = 0
+    ymin = min([v.y for v in edit.vertexes])
+    ymax = max([v.y for v in edit.vertexes])
+    LT = LinearTransform(xmin, xmax, ymin, ymax, px_size, py_size, BORDER_PERCENT)
 
     # --- Create image ---
-    im = Image.new('RGB', (pxsize, pysize), (255, 255, 255))
+    im = Image.new('RGB', (px_size, py_size), cscheme.BG)
     draw = ImageDraw.Draw(im)
 
-    # --- Draw lines ---
-    edit.linedefs.sort(lambda a, b: cmp(not a.two_sided, not b.two_sided))
-    for line in edit.linedefs:
-        # >> Flip coordinates of Y axis
-        p1x =  ( edit.vertexes[line.vx_a].x - xmin) * scale + BORDER_PIXELS + xoffset
-        p1y =  (-edit.vertexes[line.vx_a].y - ymin) * scale + BORDER_PIXELS + yoffset
-        p2x =  ( edit.vertexes[line.vx_b].x - xmin) * scale + BORDER_PIXELS + xoffset
-        p2y =  (-edit.vertexes[line.vx_b].y - ymin) * scale + BORDER_PIXELS + yoffset
-        color = (0, 0, 0)
-        if   line.two_sided: color = (144, 144, 144)
-        elif line.action:    color = (220, 130, 50)
+    # --- Draw map scale ---
+    draw_scale(draw, LT, (256, 256, 256))
 
-        # >> Draw several lines to simulate thickness 
-        draw.line((p1x, p1y, p2x, p2y), fill = color)
-        draw.line((p1x+1, p1y, p2x+1, p2y), fill = color)
-        draw.line((p1x-1, p1y, p2x-1, p2y), fill = color)
-        draw.line((p1x, p1y+1, p2x, p2y+1), fill = color)
-        draw.line((p1x, p1y-1, p2x, p2y-1), fill = color)
+    # --- MAP DRAWING CODE BEGINS -----------------------------------------------------------------
+    # --- sorts lines ---
+    edit.linedefs.sort(lambda a, b: cmp(not a.two_sided, not b.two_sided))
+
+    # --- Draw lines ---
+    # --- Create floorheight and ceilingheight for two-sided linedefs ---
+    for line in edit.linedefs:
+        # Skin one-sided linedefs
+        if line.back < 0: continue
+        front_sidedef = edit.sidedefs[line.front]
+        back_sidedef  = edit.sidedefs[line.back]
+        front_sector  = edit.sectors[front_sidedef.sector]
+        back_sector   = edit.sectors[back_sidedef.sector]
+        line.frontsector_floorheight   = front_sector.z_floor
+        line.frontsector_ceilingheight = front_sector.z_ceil
+        line.backsector_floorheight    = back_sector.z_floor
+        line.backsector_ceilingheight  = back_sector.z_ceil
+
+    # >> Use Vanilla Doom automap colours and drawing algortihm
+    # >> https://github.com/chocolate-doom/chocolate-doom/blob/sdl2-branch/src/doom/am_map.c#L1146
+    for line in edit.linedefs:
+        (p1x, p1y) = LT.MapToScreen(edit.vertexes[line.vx_a].x, edit.vertexes[line.vx_a].y)
+        (p2x, p2y) = LT.MapToScreen(edit.vertexes[line.vx_b].x, edit.vertexes[line.vx_b].y)
+
+        # >> Use same algorithm as AM_drawWalls(). cheating variable is true
+        # >> In vanilla secret walls have same colours as walls.
+        if line.back < 0:
+            color = cscheme.WALL
+        elif line.backsector_floorheight != line.frontsector_floorheight:
+            color = cscheme.FD_WALL
+        elif line.backsector_ceilingheight != line.frontsector_ceilingheight:
+            color = cscheme.CD_WALL
+        else:
+            color = cscheme.TS_WALL
+
+        # >> Draw several lines to simulate thickness
+        # draw_line(draw, p1x, p1y, p2x, p2y, color)
+        draw_thick_line(draw, p1x, p1y, p2x, p2y, color)
 
     # --- Draw things ---
-    RADIUS = 4
     for thing in edit.things:
-        # >> Flip coordinates of Y axis
-        p1x =  ( thing.x - xmin) * scale + BORDER_PIXELS + xoffset
-        p1y =  (-thing.y - ymin) * scale + BORDER_PIXELS + yoffset
-        color = (0, 255, 0)
-        draw.ellipse((p1x-RADIUS, p1y-RADIUS, p1x+RADIUS, p1y+RADIUS), outline = color)
+        draw_thing(draw, LT, thing.x, thing.y, thing.angle, cscheme.THING)
+    # --- MAP DRAWING CODE ENDS -------------------------------------------------------------------
 
     # --- Save image file ---
     del draw
