@@ -201,8 +201,9 @@ def doom_determine_engine(pwad):
 #
 # Fanarts have resolutions
 # A) 1280x720 (720p)
-# B) 
-# C)
+# B) 1920x1080 (1080p or 2K)
+# C) 3840x2160 (2160p or 4K)
+# D) 7680x4320 (4320p or 8K)
 #
 def doom_draw_map(wad, name, filename, format, pxsize, pysize):
     log_debug('drawmap() Drawing map "{0}"'.format(filename))

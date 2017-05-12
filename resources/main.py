@@ -418,11 +418,11 @@ class Main:
     def _command_setup_plugin(self):
         dialog = xbmcgui.Dialog()
         menu_item = dialog.select('Setup plugin',
-                                 ['Scan WAD directory'])
+                                 ['Scan WAD directory', 'Remove dead WADs'])
         if menu_item < 0: return
 
         # --- WAD directory scanner ---
-        # >> Scans for IWADs and PWADs and builds databases
+        # >> Scans for IWADs and PWADs, builds databases, creates icons/posters/fanarts
         if menu_item == 0:
             # >> Check if WAD and artwork directory is set. Abort if not
             if not PATHS.doom_wad_dir.path:
@@ -485,6 +485,10 @@ class Main:
 
             # >> Refresh container
             kodi_refresh_container()
+
+        # >> Removes dead WADs and associated assets (to save disk space).
+        elif menu_item == 1:
+            kodi_dialog_OK('Not implemented yet.')
 
     #
     # Choose DOOM executable for an IWAD
