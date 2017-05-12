@@ -266,17 +266,18 @@ class Main:
 
     def _render_pwad_row(self, wad):
         # --- Create listitem row ---
-        icon = 'DefaultProgram.png'
         title_str = wad['name']
-        fanart_path = wad['fanart']
+        icon_path = wad['icon'] if wad['icon'] else 'DefaultProgram.png'
         poster_path = wad['poster']
-        # log_debug('fanart_path {0}'.format(fanart_path))
+        fanart_path = wad['fanart']
+        # log_debug('icon_path {0}'.format(icon_path))
         # log_debug('poster_path {0}'.format(poster_path))
+        # log_debug('fanart_path {0}'.format(fanart_path))
 
         ICON_OVERLAY = 6
         listitem = xbmcgui.ListItem(title_str)
         listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
-        listitem.setArt({'icon' : icon, 'poster' : poster_path, 'fanart' : fanart_path})
+        listitem.setArt({'icon' : icon_path, 'poster' : poster_path, 'fanart' : fanart_path})
 
         # --- Create context menu ---
         commands = []
@@ -424,11 +425,17 @@ class Main:
         # >> Scans for IWADs and PWADs and builds databases
         if menu_item == 0:
             # >> Check if WAD and artwork directory is set. Abort if not
+            if not PATHS.doom_wad_dir.path:
+                kodi_dialog_OK('WAD directory not configured. Open the addon settings and set it.')
+                return
             if not PATHS.doom_wad_dir.isdir():
-                kodi_dialog_OK('WAD directory not configured. Aborting.')
+                kodi_dialog_OK('WAD directory not found. Open the addon settings and set a valid directory.')
+                return
+            if not PATHS.artwork_dir.path:
+                kodi_dialog_OK('Artwork directory not configured. Open the addon settings and set it.')
                 return
             if not PATHS.artwork_dir.isdir():
-                kodi_dialog_OK('Artwork directory not configured. Aborting.')
+                kodi_dialog_OK('Artwork directory not configured. Open the addon settings and set a valid directory.')
                 return
             log_info('_command_setup_plugin() doom_wad_dir "{0}"'.format(PATHS.doom_wad_dir.getPath()))
             log_info('_command_setup_plugin() artwork_dir  "{0}"'.format(PATHS.artwork_dir.getPath()))
