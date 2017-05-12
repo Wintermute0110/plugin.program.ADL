@@ -40,9 +40,9 @@ from doom import *
 def fs_new_IWAD_object():
     a = {
         'filename' : '',
+        'iwad'     : IWAD_UNKNOWN,
         'name'     : '',
         'size'     : 0,
-        'iwad'     : IWAD_UNKNOWN
     }
 
     return a
@@ -50,12 +50,15 @@ def fs_new_IWAD_object():
 def fs_new_PWAD_object():
     a = {
         'dir'        : '',
+        'engine'     : ENGINE_UNKNOWN,
         'filename'   : '',
+        'iwad'       : IWAD_UNKNOWN,
+        'level_list' : [],
         'name'       : '',
         'num_levels' : 0,
-        'level_list' : [],
-        'iwad'       : IWAD_UNKNOWN,
-        'engine'     : ENGINE_UNKNOWN
+        's_icon'     : '',
+        's_fanart'   : '',
+        's_poster'   : '',    
     }
 
     return a
@@ -229,19 +232,19 @@ def fs_scan_pwads(PATHS, pwad_file_list):
                 fanart_FN = artwork_path_FN.pjoin(file.getBase_noext() + '_' + map_name + '.png')
                 log_debug('Creating FANART "{0}"'.format(fanart_FN.getPath()))
                 doom_draw_map(inwad, map_name, fanart_FN.getPath(), 'PNG', 1920, 1080)
-                pwad['fanart'] = fanart_FN.getPath()
+                pwad['s_fanart'] = fanart_FN.getPath()
 
                 # >> Create poster with level information
                 poster_FN = artwork_path_FN.pjoin(file.getBase_noext() + '_poster.png')
                 log_debug('Creating POSTER "{0}"'.format(poster_FN.getPath()))
                 doom_draw_poster(pwad, poster_FN.getPath(), PATHS.FONT_FILE_PATH.getPath())
-                pwad['poster'] = poster_FN.getPath()
+                pwad['s_poster'] = poster_FN.getPath()
 
                 # >> Create icon with level information
                 poster_FN = artwork_path_FN.pjoin(file.getBase_noext() + '_icon.png')
                 log_debug('Creating ICON "{0}"'.format(poster_FN.getPath()))
                 doom_draw_icon(pwad, poster_FN.getPath(), PATHS.FONT_FILE_PATH.getPath())
-                pwad['icon'] = poster_FN.getPath()
+                pwad['s_icon'] = poster_FN.getPath()
 
                 # >> Add PWAD to database. Only add the PWAD if it contains level.
                 log_debug('Adding PWAD to database')

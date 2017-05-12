@@ -267,9 +267,9 @@ class Main:
     def _render_pwad_row(self, wad):
         # --- Create listitem row ---
         title_str = wad['name']
-        icon_path = wad['icon'] if wad['icon'] else 'DefaultProgram.png'
-        poster_path = wad['poster']
-        fanart_path = wad['fanart']
+        icon_path = wad['s_icon'] if wad['s_icon'] else 'DefaultProgram.png'
+        poster_path = wad['s_poster']
+        fanart_path = wad['s_fanart']
         # log_debug('icon_path {0}'.format(icon_path))
         # log_debug('poster_path {0}'.format(poster_path))
         # log_debug('fanart_path {0}'.format(fanart_path))
