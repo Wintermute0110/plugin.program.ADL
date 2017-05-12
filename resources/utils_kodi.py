@@ -55,25 +55,25 @@ def log_debug(str_text):
 def log_verb(str_text):
     if current_log_level >= LOG_VERB:
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
-        log_text = ADDON_SHORT_NAME + ' VERB :' + str_text
+        log_text = ADDON_SHORT_NAME + ' VERB : ' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 def log_info(str_text):
     if current_log_level >= LOG_INFO:
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
-        log_text = ADDON_SHORT_NAME + ' INFO :' + str_text
+        log_text = ADDON_SHORT_NAME + ' INFO : ' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 def log_warning(str_text):
     if current_log_level >= LOG_WARNING:
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
-        log_text = ADDON_SHORT_NAME + ' WARN :' + str_text
+        log_text = ADDON_SHORT_NAME + ' WARN : ' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 def log_error(str_text):
     if current_log_level >= LOG_ERROR:
         if isinstance(str_text, str): str_text = str_text.decode('utf-8')
-        log_text = ADDON_SHORT_NAME + ' ERROR:' + str_text
+        log_text = ADDON_SHORT_NAME + ' ERROR: ' + str_text
         xbmc.log(log_text.encode('utf-8'), level=xbmc.LOGERROR)
 
 # -----------------------------------------------------------------------------
