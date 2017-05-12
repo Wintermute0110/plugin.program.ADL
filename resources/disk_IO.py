@@ -276,7 +276,7 @@ def fs_build_pwad_index_dic(doom_wad_dir, pwads):
     
     # Make a list of all directories
     for pwad_key in pwads:
-        log_debug('Directory {0}'.format(pwads[pwad_key]['dir']))
+        # log_debug('Directory {0}'.format(pwads[pwad_key]['dir']))
         directories_set.add(pwads[pwad_key]['dir'])
 
     # Traverse list of directories and fill content

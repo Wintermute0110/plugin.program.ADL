@@ -243,14 +243,14 @@ class Main:
 
     def _render_iwad_row(self, wad):
         # --- Create listitem row ---
-        icon = 'DefaultProgram.png'
         title_str = wad['name']
+        icon_path = 'DefaultProgram.png'
         fanart_path = wad['fanart'] if 'fanart' in wad else ''
 
         ICON_OVERLAY = 6
         listitem = xbmcgui.ListItem(title_str)
         listitem.setInfo('video', {'title' : title_str, 'overlay' : ICON_OVERLAY})
-        if fanart_path: listitem.setArt({'icon' : icon, 'fanart' : fanart_path})
+        if fanart_path: listitem.setArt({'icon' : icon_path, 'fanart' : fanart_path})
 
         # --- Create context menu ---
         commands = []
@@ -418,12 +418,14 @@ class Main:
     def _command_setup_plugin(self):
         dialog = xbmcgui.Dialog()
         menu_item = dialog.select('Setup plugin',
-                                 ['Scan WAD directory', 'Remove dead WADs'])
+                                 ['Scan WAD directory', 'Remove dead PWADs'])
         if menu_item < 0: return
 
         # --- WAD directory scanner ---
         # >> Scans for IWADs and PWADs, builds databases, creates icons/posters/fanarts
         if menu_item == 0:
+            log_info('_command_setup_plugin() Scanning WAD directory ...')
+
             # >> Check if WAD and artwork directory is set. Abort if not
             if not PATHS.doom_wad_dir.path:
                 kodi_dialog_OK('WAD directory not configured. Open the addon settings and set it.')
@@ -488,7 +490,39 @@ class Main:
 
         # >> Removes dead WADs and associated assets (to save disk space).
         elif menu_item == 1:
-            kodi_dialog_OK('Not implemented yet.')
+            log_info('_command_setup_plugin() Removing dead PWADs ...')
+
+            # >> Open PWAD database and index
+            pwads_old = fs_load_JSON_file(PATHS.PWADS_FILE_PATH.getPath())
+
+            # >> Progress dialog
+            pDialog = xbmcgui.DialogProgress()
+            pDialog_canceled = False
+            pDialog.create('Advanced DOOM Launcher', 'Removing dead PWADs ...')
+            num_items = len(pwads_old)
+            item_count = 0
+
+            # >> Traverse PWAD dictionary and check if file exist
+            #    To avoid issues changing the dictionary while iterating it make a new one.
+            pwads_new = {}
+            for key, pwad in pwads_old.iteritems():
+                pwad_FN = FileName(key)
+                if pwad_FN.exists():
+                    log_debug('Keep PWAD {0}'.format(key))
+                    pwads_new[key] = pwad
+                else:
+                    log_debug('Dele PWAD {0}'.format(key))
+                item_count += 1
+                pDialog.update(item_count * 100 / num_items)
+            pDialog.update(100)
+            pDialog.close()
+
+            # >> Regenerate PWAD index and save databases
+            pwad_index_dic = fs_build_pwad_index_dic(PATHS, pwads_new)
+            kodi_busydialog_ON()
+            fs_write_JSON_file(PATHS.PWADS_FILE_PATH.getPath(), pwads_new)
+            fs_write_JSON_file(PATHS.PWADS_IDX_FILE_PATH.getPath(), pwad_index_dic)
+            kodi_busydialog_OFF()
 
     #
     # Choose DOOM executable for an IWAD
