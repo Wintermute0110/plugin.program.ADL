@@ -392,6 +392,9 @@ def doom_draw_map(wad, name, filename, format, px_size, py_size):
     draw_scale(draw, LT, (256, 256, 256))
 
     # --- MAP DRAWING CODE BEGINS -----------------------------------------------------------------
+    # NOTE Bad/incorrect PWADs may produce this code to crash (Exception IndexError: list index
+    #      out of bounds). Caller of this function should check for exceptions.
+
     # --- sorts lines ---
     edit.linedefs.sort(lambda a, b: cmp(not a.two_sided, not b.two_sided))
 

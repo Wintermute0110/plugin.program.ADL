@@ -231,8 +231,15 @@ def fs_scan_pwads(PATHS, pwad_file_list):
                 map_name = level_name_list[0]
                 fanart_FN = artwork_path_FN.pjoin(file.getBase_noext() + '_' + map_name + '.png')
                 log_debug('Creating FANART "{0}"'.format(fanart_FN.getPath()))
-                doom_draw_map(inwad, map_name, fanart_FN.getPath(), 'PNG', 1920, 1080)
-                pwad['s_fanart'] = fanart_FN.getPath()
+                # Bad formated PWADs may produce this function to fail.
+                try:
+                    doom_draw_map(inwad, map_name, fanart_FN.getPath(), 'PNG', 1920, 1080)
+                except IndexError:
+                    log_error('Exception IndexError in doom_draw_map()')
+                    log_error('In PWAD "{0}"'.format(database_filename))
+                    pwad['s_fanart'] = ''
+                else:
+                    pwad['s_fanart'] = fanart_FN.getPath()
 
                 # >> Create poster with level information
                 poster_FN = artwork_path_FN.pjoin(file.getBase_noext() + '_poster.png')
