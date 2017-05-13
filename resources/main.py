@@ -545,13 +545,13 @@ class Main:
             return None
         # >> If only one exectuable there is nothing to choose
         elif len(doom_exe_name_list) == 1:
-            log_info('_run_iwad() Only 1 DOOM executable configured.')
+            log_info('_misc_get_doom_executable() Only 1 DOOM executable configured.')
             doom_prog_FN = doom_exe_FN_list[0]
         else:
             dialog = xbmcgui.Dialog()
             menu_item = dialog.select('Choose DOOM executable', doom_exe_name_list)
             if menu_item < 0: return
-            log_info('_run_iwad() User choos DOOM exe index {0}'.format(menu_item))
+            log_info('_misc_get_doom_executable() User choos DOOM exe index {0}'.format(menu_item))
             doom_prog_FN = doom_exe_FN_list[menu_item]
 
         return doom_prog_FN
