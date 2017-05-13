@@ -315,39 +315,47 @@ class Main:
     # ---------------------------------------------------------------------------------------------
     # Information display
     # ---------------------------------------------------------------------------------------------
-    def _command_view(self, wad_name, wad_filename):
-        log_debug('_command_view() wad_name {0}'.format(wad_name))
+    def _command_view(self, wad_type, wad_filename):
+        log_debug('_command_view() wad_type {0}'.format(wad_type))
         log_debug('_command_view() wad_filename "{0}"'.format(wad_filename))
+        wad_FN = FileName(wad_filename)
 
-        # >> Build menu base on view_type
-        if DOOM_OUTPUT_FILE_PATH.exists():
-            stat_stdout = DOOM_OUTPUT_FILE_PATH.stat()
+        # --- Build menu base on view_type ---
+        if PATHS.DOOM_OUTPUT_FILE_PATH.exists():
+            stat_stdout = PATHS.DOOM_OUTPUT_FILE_PATH.stat()
             size_stdout = stat_stdout.st_size
             STD_status = '{0} bytes'.format(size_stdout)
         else:
             STD_status = 'not found'
-        if wad_name == 'iwad':
+
+        # --- Check txt extension ---
+        pwad_txt_FN = FileName(wad_FN.getPath_noext() + '.txt')
+        pwad_TXT_status = 'txt file found' if pwad_txt_FN.exists() else 'txt file not found'
+        # --- Check TXT extension ---
+        if not pwad_txt_FN.exists():
+            pwad_txt_FN = FileName(wad_FN.getPath_noext() + '.TXT')
+            pwad_TXT_status = 'TXT file found' if pwad_txt_FN.exists() else 'txt/TXT file not found'
+
+        # --- Run select dialog ---
+        if wad_type == 'iwad':
             d_list = ['View IWAD database entry',
                       'View last execution output ({0})'.format(STD_status)]
-
-        elif wad_name == 'pwad':
+        elif wad_type == 'pwad':
             d_list = ['View PWAD database entry',
                       'View last execution output ({0})'.format(STD_status),
-                      'View WAD TXT file']
-
+                      'View PWAD TXT description file ({0})'.format(pwad_TXT_status)]
         dialog = xbmcgui.Dialog()
         selected_value = dialog.select('View', d_list)
         if selected_value < 0: return
 
+        # --- View database entry ---
         if selected_value == 0:
-            if wad_name == 'iwad':
-                window_title = 'IWAD database data'
-                info_text  = '[COLOR orange]IWAD information[/COLOR]\n'
-                info_text += self._misc_print_string_IWAD(wad_filename)
-            elif wad_name == 'pwad':
-                window_title = 'PWAD database data'
-                info_text  = '[COLOR orange]PWAD information[/COLOR]\n'
-                info_text += self._misc_print_string_PWAD(wad_filename)
+            if wad_type == 'iwad':
+                window_title = 'IWAD database information'
+                info_text = self._misc_print_string_IWAD(wad_filename)
+            elif wad_type == 'pwad':
+                window_title = 'PWAD database information'
+                info_text = self._misc_print_string_PWAD(wad_filename)
 
             # --- Show information window ---
             # textviewer WINDOW_DIALOG_TEXT_VIEWER 10147 DialogTextViewer.xml
@@ -368,12 +376,12 @@ class Main:
             if sys.platform == 'win32':
                 kodi_dialog_OK('This feature is not available on Windows.')
                 return
-            if not DOOM_OUTPUT_FILE_PATH.exists():
+            if not PATHS.DOOM_OUTPUT_FILE_PATH.exists():
                 kodi_dialog_OK('Log file not found. Try to run the emulator/application.')
                 return
             info_text = ''
-            with open(DOOM_OUTPUT_FILE_PATH.getPath(), 'r') as myfile:
-                info_text = myfile.read()
+            with open(PATHS.DOOM_OUTPUT_FILE_PATH.getPath(), 'r') as file_object:
+                info_text = file_object.read()
 
             # --- Show information window ---
             window_title = 'DOOM last execution stdout'
@@ -388,27 +396,58 @@ class Main:
 
         # --- View PWAD TXT info file ---
         elif selected_value == 2:
-            kodi_dialog_OK('View of PWAD TXT not coded yet. Sorry.')
+            if not pwad_txt_FN.exists():
+                kodi_dialog_OK('PWAD TXT description file not found.')
+                return
+            info_text = ''
+            with open(pwad_txt_FN.getPath(), 'r') as file_object:
+                info_text = file_object.read()
+
+            # --- Show information window ---
+            window_title = 'PWAD TXT description file'
+            try:
+                xbmc.executebuiltin('ActivateWindow(textviewer)')
+                window = xbmcgui.Window(10147)
+                xbmc.sleep(100)
+                window.getControl(1).setLabel(window_title)
+                window.getControl(5).setText(info_text)
+            except:
+                log_error('_command_view() Exception rendering INFO window')
 
     def _misc_print_string_IWAD(self, wad_filename):
-        iwads = fs_load_JSON_file(IWADS_FILE_PATH.getPath())
+        # >> Windows workaround
+        if sys.platform == 'win32': wad_filename = wad_filename.replace('/', '\\')
+        iwads = fs_load_JSON_file(PATHS.IWADS_FILE_PATH.getPath())
+        iwad = None
+        for iwad_t in iwads:
+            if iwad_t['filename'] == wad_filename:
+                iwad = iwad_t
+                break
+        if iwad == None: return 'IWAD not found!'
+
+        info_text  = "[COLOR violet]filename[/COLOR]: '{0}'\n".format(iwad['filename'])
+        info_text += "[COLOR violet]iwad[/COLOR]: '{0}'\n".format(iwad['iwad'])
+        info_text += "[COLOR violet]name[/COLOR]: '{0}'\n".format(iwad['name'])
+        info_text += "[COLOR skyblue]size[/COLOR]: {0} bytes\n".format(iwad['size'])
+
+        return info_text
     
     def _misc_print_string_PWAD(self, wad_filename):
         # >> Windows workaround
         if sys.platform == 'win32': wad_filename = wad_filename.replace('/', '\\')
-        pwads = fs_load_JSON_file(PWADS_FILE_PATH.getPath())
+        pwads = fs_load_JSON_file(PATHS.PWADS_FILE_PATH.getPath())
         pwad = pwads[wad_filename]
 
-        info_text  = ''
-        info_text += "[COLOR violet]dir[/COLOR]: '{0}'\n".format(pwad['dir'])
+        info_text  = "[COLOR violet]dir[/COLOR]: '{0}'\n".format(pwad['dir'])
         info_text += "[COLOR violet]engine[/COLOR]: '{0}'\n".format(pwad['engine'])
-        info_text += "[COLOR violet]fanart[/COLOR]: '{0}'\n".format(pwad['fanart'])
         info_text += "[COLOR violet]filename[/COLOR]: '{0}'\n".format(pwad['filename'])
         info_text += "[COLOR violet]iwad[/COLOR]: '{0}'\n".format(pwad['iwad'])
         info_text += "[COLOR skyblue]level_list[/COLOR]: '{0}'\n".format(pwad['level_list'])
         info_text += "[COLOR violet]name[/COLOR]: '{0}'\n".format(pwad['name'])
-        info_text += "[COLOR violet]num_levels[/COLOR]: '{0}'\n".format(pwad['num_levels'])
-        info_text += "[COLOR violet]poster[/COLOR]: '{0}'\n".format(pwad['poster'])
+        info_text += "[COLOR skyblue]num_levels[/COLOR]: '{0}'\n".format(pwad['num_levels'])
+        info_text += "[COLOR violet]s_fanart[/COLOR]: '{0}'\n".format(pwad['s_fanart'])
+        info_text += "[COLOR violet]s_icon[/COLOR]: '{0}'\n".format(pwad['s_icon'])
+        info_text += "[COLOR violet]s_poster[/COLOR]: '{0}'\n".format(pwad['s_poster'])
 
         return info_text
 
