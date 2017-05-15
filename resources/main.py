@@ -526,6 +526,9 @@ class Main:
             fs_write_JSON_file(PATHS.PWADS_FILE_PATH.getPath(), pwads)
             fs_write_JSON_file(PATHS.PWADS_IDX_FILE_PATH.getPath(), pwad_index_dic)
             kodi_busydialog_OFF()
+            log_info('Number of IWADs {0}'.format(len(iwads)))
+            log_info('Number of PWADs {0}'.format(len(pwads)))
+            log_info('Dirs in index   {0}'.format(len(pwad_index_dic)))
 
             # >> Refresh container
             kodi_refresh_container()

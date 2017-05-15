@@ -455,7 +455,7 @@ def doom_draw_poster(pwad, filename, font_filename):
     FONTSIZE  = 40
     LINESPACE = 65
     XMARGIN   = 40
-    YMARGIN   = 25
+    YMARGIN   = 40
     T_LINES_Y = [x * LINESPACE for x in range(0, 50)]
 
     img = Image.new('RGB', (1000, 1500), (0, 0, 0))
@@ -465,13 +465,15 @@ def doom_draw_poster(pwad, filename, font_filename):
     # --- Draw text ---
     iwad_str       = 'IWAD: {0}'.format(pwad['iwad'])
     engine_str     = 'ENGINE: {0}'.format(pwad['engine'])
+    info_TXT_str   = 'TXT FILE: {0}'.format('YES' if pwad['filename_TXT'] else 'NO')
     num_levels_str = 'NUMBER of LEVELS: {0}'.format(pwad['num_levels'])
     draw.text((XMARGIN, YMARGIN + T_LINES_Y[0]), iwad_str, (255, 100, 100), font = font)
     draw.text((XMARGIN, YMARGIN + T_LINES_Y[1]), engine_str, (255, 100, 100), font = font)
-    draw.text((XMARGIN, YMARGIN + T_LINES_Y[2]), num_levels_str, (255, 100, 100), font = font)
-    draw.text((XMARGIN, YMARGIN + T_LINES_Y[4]), 'LEVELS:', (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[2]), info_TXT_str, (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[3]), num_levels_str, (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[5]), 'LEVELS:', (255, 100, 100), font = font)
     level_counter = 0
-    text_line_counter = 5
+    text_line_counter = 6
     LEVELS_PER_LINE = 4
     if len(pwad['level_list']) <= LEVELS_PER_LINE:
         # --- Levels fit in one line ---
@@ -522,13 +524,15 @@ def doom_draw_icon(pwad, filename, font_filename):
     # --- Draw text ---
     iwad_str       = 'IWAD: {0}'.format(pwad['iwad'])
     engine_str     = 'ENGINE: {0}'.format(pwad['engine'])
+    info_TXT_str   = 'TXT FILE: {0}'.format('YES' if pwad['filename_TXT'] else 'NO')
     num_levels_str = 'NUMBER of LEVELS: {0}'.format(pwad['num_levels'])
     draw.text((XMARGIN, YMARGIN + T_LINES_Y[0]), iwad_str, (255, 100, 100), font = font)
     draw.text((XMARGIN, YMARGIN + T_LINES_Y[1]), engine_str, (255, 100, 100), font = font)
-    draw.text((XMARGIN, YMARGIN + T_LINES_Y[2]), num_levels_str, (255, 100, 100), font = font)
-    draw.text((XMARGIN, YMARGIN + T_LINES_Y[4]), 'LEVELS:', (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[2]), info_TXT_str, (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[3]), num_levels_str, (255, 100, 100), font = font)
+    draw.text((XMARGIN, YMARGIN + T_LINES_Y[5]), 'LEVELS:', (255, 100, 100), font = font)
     level_counter = 0
-    text_line_counter = 5
+    text_line_counter = 6
     LEVELS_PER_LINE = 4
     if len(pwad['level_list']) <= LEVELS_PER_LINE:
         # --- Levels fit in one line ---
