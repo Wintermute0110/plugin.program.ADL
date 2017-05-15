@@ -49,16 +49,17 @@ def fs_new_IWAD_object():
 
 def fs_new_PWAD_object():
     a = {
-        'dir'        : '',
-        'engine'     : ENGINE_UNKNOWN,
-        'filename'   : '',
-        'iwad'       : IWAD_UNKNOWN,
-        'level_list' : [],
-        'name'       : '',
-        'num_levels' : 0,
-        's_icon'     : '',
-        's_fanart'   : '',
-        's_poster'   : '',    
+        'dir'          : '',
+        'engine'       : ENGINE_UNKNOWN,
+        'filename'     : '',
+        'filename_TXT' : '',
+        'iwad'         : IWAD_UNKNOWN,
+        'level_list'   : [],
+        'name'         : '',
+        'num_levels'   : 0,
+        's_icon'       : '',
+        's_fanart'     : '',
+        's_poster'     : '',    
     }
 
     return a
@@ -196,20 +197,26 @@ def fs_scan_pwads(PATHS, pwad_file_list):
             level_name_list.sort()
             log_debug('Number of levels {0}'.format(inwad.maps._n))
 
-            # >> Create PWAD database dictionary entry
+            # --- Create PWAD database dictionary entry ---
+            # NOTE In the database, 'filename' paths are always stored as '/'.
+            #      All other paths are stored in native platform format.
             pwad_dir = file.getDir()
             wad_relative_dir_FN = FileName(pwad_dir.replace(PATHS.doom_wad_dir.getPath(), ''))
             log_debug('Relative dir "{0}"'.format(wad_relative_dir_FN.getPath()))
-            # In the database paths are always stored as '/'
-            database_filename = file.getPath().replace('\\', '/')
+            pwad_txt_FN = FileName(file.getPath_noext() + '.txt')
+            pwad_TXT_FN = FileName(file.getPath_noext() + '.TXT')
+            if pwad_txt_FN.exists():   txt_database_filename = pwad_txt_FN.getPath()
+            elif pwad_TXT_FN.exists(): txt_database_filename = pwad_TXT_FN.getPath()
+            else:                      txt_database_filename = ''
             pwad = fs_new_PWAD_object()
-            pwad['dir']        = wad_relative_dir_FN.getPath()
-            pwad['filename']   = database_filename
-            pwad['name']       = file.getBase_noext()
-            pwad['num_levels'] = inwad.maps._n
-            pwad['level_list'] = level_name_list
-            pwad['iwad']       = doom_determine_iwad(pwad)
-            pwad['engine']     = doom_determine_engine(pwad)
+            pwad['dir']          = wad_relative_dir_FN.getPath()
+            pwad['filename']     = file.getPath().replace('\\', '/')
+            pwad['filename_TXT'] = txt_database_filename
+            pwad['name']         = file.getBase_noext()
+            pwad['num_levels']   = inwad.maps._n
+            pwad['level_list']   = level_name_list
+            pwad['iwad']         = doom_determine_iwad(pwad)
+            pwad['engine']       = doom_determine_engine(pwad)
             if inwad.maps._n > 0:
                 # >> Create WAD info file. If NFO file exists just update automatic fields.
                 nfo_FN = FileName(file.getPath_noext() + '.nfo')
@@ -236,7 +243,7 @@ def fs_scan_pwads(PATHS, pwad_file_list):
                     doom_draw_map(inwad, map_name, fanart_FN.getPath(), 'PNG', 1920, 1080)
                 except IndexError:
                     log_error('Exception IndexError in doom_draw_map()')
-                    log_error('In PWAD "{0}"'.format(database_filename))
+                    log_error('In PWAD "{0}"'.format(file.getPath()))
                     pwad['s_fanart'] = ''
                 else:
                     pwad['s_fanart'] = fanart_FN.getPath()

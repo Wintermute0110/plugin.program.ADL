@@ -416,6 +416,7 @@ class Main:
 
     def _misc_print_string_IWAD(self, wad_filename):
         # >> Windows workaround
+        log_debug('_misc_print_string_IWAD() wad_filename = "{0}"'.format(wad_filename))
         if sys.platform == 'win32': wad_filename = wad_filename.replace('/', '\\')
         iwads = fs_load_JSON_file(PATHS.IWADS_FILE_PATH.getPath())
         iwad = None
@@ -431,16 +432,18 @@ class Main:
         info_text += "[COLOR skyblue]size[/COLOR]: {0} bytes\n".format(iwad['size'])
 
         return info_text
-    
+
     def _misc_print_string_PWAD(self, wad_filename):
         # >> Windows workaround
-        if sys.platform == 'win32': wad_filename = wad_filename.replace('/', '\\')
+        log_debug('_misc_print_string_PWAD() wad_filename = "{0}"'.format(wad_filename))
+        # if sys.platform == 'win32': wad_filename = wad_filename.replace('/', '\\')
         pwads = fs_load_JSON_file(PATHS.PWADS_FILE_PATH.getPath())
         pwad = pwads[wad_filename]
 
         info_text  = "[COLOR violet]dir[/COLOR]: '{0}'\n".format(pwad['dir'])
         info_text += "[COLOR violet]engine[/COLOR]: '{0}'\n".format(pwad['engine'])
         info_text += "[COLOR violet]filename[/COLOR]: '{0}'\n".format(pwad['filename'])
+        info_text += "[COLOR violet]filename_TXT[/COLOR]: '{0}'\n".format(pwad['filename_TXT'])
         info_text += "[COLOR violet]iwad[/COLOR]: '{0}'\n".format(pwad['iwad'])
         info_text += "[COLOR skyblue]level_list[/COLOR]: '{0}'\n".format(pwad['level_list'])
         info_text += "[COLOR violet]name[/COLOR]: '{0}'\n".format(pwad['name'])
