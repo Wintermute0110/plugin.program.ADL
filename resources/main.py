@@ -141,6 +141,7 @@ class Main:
 
         # --- Paths ---
         self.settings['chocolate_doom_prog']     = __addon_obj__.getSetting('chocolate_doom_prog').decode('utf-8')
+        self.settings['crispy_doom_prog']        = __addon_obj__.getSetting('crispy_doom_prog').decode('utf-8')
         self.settings['prboom_plus_prog']        = __addon_obj__.getSetting('prboom_plus_prog').decode('utf-8')
         self.settings['zdoom_doom_prog']         = __addon_obj__.getSetting('zdoom_doom_prog').decode('utf-8')
 
@@ -162,6 +163,7 @@ class Main:
 
         # >> Add addon settings paths to global paths. This is convenient for coding.
         PATHS.chocolate_doom_prog = FileName(self.settings['chocolate_doom_prog'])
+        PATHS.crispy_doom_prog    = FileName(self.settings['crispy_doom_prog'])
         PATHS.prboom_plus_prog    = FileName(self.settings['prboom_plus_prog'])
         PATHS.zdoom_doom_prog     = FileName(self.settings['zdoom_doom_prog'])
         PATHS.doom_wad_dir        = FileName(self.settings['doom_wad_dir'])
@@ -578,6 +580,9 @@ class Main:
         if PATHS.chocolate_doom_prog.isfile():
             doom_exe_FN_list.append(PATHS.chocolate_doom_prog)
             doom_exe_name_list.append(PATHS.chocolate_doom_prog.getBase_noext().capitalize())
+        if PATHS.crispy_doom_prog.isfile():
+            doom_exe_FN_list.append(PATHS.crispy_doom_prog)
+            doom_exe_name_list.append(PATHS.crispy_doom_prog.getBase_noext().capitalize())
         if PATHS.prboom_plus_prog.isfile():
             doom_exe_FN_list.append(PATHS.prboom_plus_prog)
             doom_exe_name_list.append(PATHS.prboom_plus_prog.getBase_noext().capitalize())
@@ -596,7 +601,7 @@ class Main:
             dialog = xbmcgui.Dialog()
             menu_item = dialog.select('Choose DOOM executable', doom_exe_name_list)
             if menu_item < 0: return
-            log_info('_misc_get_doom_executable() User choos DOOM exe index {0}'.format(menu_item))
+            log_info('_misc_get_doom_executable() User choosed DOOM exe index {0}'.format(menu_item))
             doom_prog_FN = doom_exe_FN_list[menu_item]
 
         return doom_prog_FN

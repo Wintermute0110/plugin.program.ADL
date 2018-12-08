@@ -3,6 +3,7 @@
 <category label="Paths">
     <setting id="separator" type="lsep" label="DOOM executables"/>
     <setting label="Chocolate DOOM" type="file" id="chocolate_doom_prog" />
+    <setting label="Crispy DOOM" type="file" id="crispy_doom_prog" />
     <setting label="PrBoom+" type="file" id="prboom_plus_prog" />
     <setting label="ZDoom" type="file" id="zdoom_doom_prog" />
 
